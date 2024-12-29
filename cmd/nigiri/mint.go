@@ -5,15 +5,11 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
-	"path/filepath"
 	"strconv"
-	"strings"
 
 	"github.com/urfave/cli/v2"
-	"github.com/vulpemventures/nigiri/internal/config"
-	"github.com/vulpemventures/nigiri/internal/docker"
 )
 
 var mint = cli.Command{
@@ -33,16 +29,14 @@ func mintAction(ctx *cli.Context) error {
 		return errors.New("wrong number of arguments")
 	}
 
-	datadir := ctx.String("datadir")
-	composePath := filepath.Join(datadir, config.DefaultCompose)
-
-	serviceName := "chopsticks-liquid"
-
-	portSlice, err := docker.GetPortsForService(composePath, serviceName)
+	// Get Liquid port from nigiri state
+	portStr, err := nigiriState.GetString("chopsticks_liquid_port")
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to get chopsticks liquid port from state: %w", err)
 	}
-	mappedPorts := strings.Split(portSlice[0], ":")
+
+	// Build the mint URL
+	url := fmt.Sprintf("http://127.0.0.1:%s/mint", portStr)
 
 	var request struct {
 		Address  string `json:"address"`
@@ -59,17 +53,16 @@ func mintAction(ctx *cli.Context) error {
 		request.Ticker = ctx.Args().Get(3)
 	}
 
-	requestPort := mappedPorts[0]
 	payload, err := json.Marshal(request)
 	if err != nil {
 		return err
 	}
-	res, err := http.Post("http://127.0.0.1:"+requestPort+"/mint", "application/json", bytes.NewBuffer(payload))
+	res, err := http.Post(url, "application/json", bytes.NewBuffer(payload))
 	if err != nil {
 		return err
 	}
 
-	data, err := ioutil.ReadAll(res.Body)
+	data, err := io.ReadAll(res.Body)
 	if err != nil {
 		return err
 	}

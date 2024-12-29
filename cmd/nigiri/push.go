@@ -4,14 +4,10 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
-	"path/filepath"
-	"strings"
 
 	"github.com/urfave/cli/v2"
-	"github.com/vulpemventures/nigiri/internal/config"
-	"github.com/vulpemventures/nigiri/internal/docker"
 )
 
 var push = cli.Command{
@@ -35,27 +31,29 @@ func pushAction(ctx *cli.Context) error {
 	}
 
 	isLiquid := ctx.Bool("liquid")
-	datadir := ctx.String("datadir")
-	composePath := filepath.Join(datadir, config.DefaultCompose)
 
-	var serviceName string = "chopsticks"
+	// Get the correct port from nigiri state
+	var portStr string
+	var err error
 	if isLiquid {
-		serviceName = "chopsticks-liquid"
+		portStr, err = nigiriState.GetString("chopsticks_liquid_port")
+	} else {
+		portStr, err = nigiriState.GetString("chopsticks_bitcoin_port")
+	}
+	if err != nil {
+		return fmt.Errorf("failed to get chopsticks port from state: %w", err)
 	}
 
-	portSlice, err := docker.GetPortsForService(composePath, serviceName)
-	if err != nil {
-		return err
-	}
-	mappedPorts := strings.Split(portSlice[0], ":")
-	requestPort := mappedPorts[0]
+	// Build the tx URL
+	url := fmt.Sprintf("http://127.0.0.1:%s/tx", portStr)
+
 	hex := []byte(ctx.Args().First())
 
-	res, err := http.Post("http://127.0.0.1:"+requestPort+"/tx", "application/string", bytes.NewBuffer(hex))
+	res, err := http.Post(url, "application/string", bytes.NewBuffer(hex))
 	if err != nil {
 		return err
 	}
-	data, err := ioutil.ReadAll(res.Body)
+	data, err := io.ReadAll(res.Body)
 	if err != nil {
 		return err
 	}

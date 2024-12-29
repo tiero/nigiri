@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"os/exec"
@@ -27,6 +28,10 @@ var stop = cli.Command{
 
 func stopAction(ctx *cli.Context) error {
 	delete := ctx.Bool("delete")
+	if isRunning, _ := nigiriState.GetBool("running"); !isRunning {
+		return errors.New("nigiri is not running")
+	}
+
 	datadir := ctx.String("datadir")
 	composePath := filepath.Join(datadir, config.DefaultCompose)
 
@@ -49,6 +54,14 @@ func stopAction(ctx *cli.Context) error {
 		return err
 	}
 
+	// Stop the HTTP server if it's running
+	if httpServer != nil {
+		if err := httpServer.Stop(); err != nil {
+			return fmt.Errorf("failed to stop HTTP server: %w", err)
+		}
+		httpServer = nil
+	}
+
 	if delete {
 		fmt.Println("Removing data from volumes...")
 
@@ -68,6 +81,9 @@ func stopAction(ctx *cli.Context) error {
 	} else {
 		if err := nigiriState.Set(map[string]string{
 			"running": strconv.FormatBool(false),
+			"ci":      strconv.FormatBool(false),
+			"liquid":  strconv.FormatBool(false),
+			"ln":      strconv.FormatBool(false),
 		}); err != nil {
 			return err
 		}

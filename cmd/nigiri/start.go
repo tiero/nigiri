@@ -6,9 +6,9 @@ import (
 	"os"
 	"path/filepath"
 	"strconv"
-	"strings"
 
 	"github.com/urfave/cli/v2"
+	"github.com/vulpemventures/nigiri/internal/chopsticks"
 	"github.com/vulpemventures/nigiri/internal/config"
 	"github.com/vulpemventures/nigiri/internal/docker"
 )
@@ -25,6 +25,16 @@ var start = cli.Command{
 			Usage: "runs in headless mode without esplora for continuous integration environments",
 			Value: false,
 		},
+		&cli.IntFlag{
+			Name:  "chopsticks-bitcoin-port",
+			Usage: "port for the Bitcoin Chopsticks HTTP server",
+			Value: 3000,
+		},
+		&cli.IntFlag{
+			Name:  "chopsticks-liquid-port",
+			Usage: "port for the Liquid Chopsticks HTTP server",
+			Value: 3001,
+		},
 	},
 }
 
@@ -38,6 +48,8 @@ func startAction(ctx *cli.Context) error {
 	isLN := ctx.Bool("ln")
 	isCI := ctx.Bool("ci")
 	datadir := ctx.String("datadir")
+	bitcoinPort := ctx.Int("chopsticks-bitcoin-port")
+	liquidPort := ctx.Int("chopsticks-liquid-port")
 	composePath := filepath.Join(datadir, config.DefaultCompose)
 
 	// spin up all the services in the compose file
@@ -56,12 +68,7 @@ func startAction(ctx *cli.Context) error {
 
 	if isCI {
 		//this will only run chopsticks and servives it depends on
-		servicesToRun = []string{"chopsticks"}
-		if isLiquid {
-			//this will only run chopsticks & chopsticks-liquid and servives they depends on
-			servicesToRun = append(servicesToRun, "chopsticks-liquid")
-		}
-		// add also LN services if needed
+		servicesToRun = []string{}
 		if isLN {
 			// LND
 			servicesToRun = append(servicesToRun, "tap")
@@ -81,11 +88,36 @@ func startAction(ctx *cli.Context) error {
 		return err
 	}
 
+	// Wait for services to be ready
+	if err := docker.WaitForService(composePath, "bitcoin"); err != nil {
+		return fmt.Errorf("bitcoin service not ready: %w", err)
+	}
+	if isLiquid {
+		if err := docker.WaitForService(composePath, "liquid"); err != nil {
+			return fmt.Errorf("liquid service not ready: %w", err)
+		}
+	}
+
+	// Start the HTTP proxy servers
+	httpServer = chopsticks.New(
+		strconv.Itoa(bitcoinPort),                              // Bitcoin server port
+		strconv.Itoa(liquidPort),                               // Liquid server port
+		composePath,                              // Docker compose path from nigiri state
+		filepath.Join(datadir, "chopsticks.log"), // Log file path
+	)
+	if err := httpServer.Start(); err != nil {
+		return fmt.Errorf("failed to start HTTP servers: %w", err)
+	}
+
 	if err := nigiriState.Set(map[string]string{
-		"running": strconv.FormatBool(true),
-		"ci":      strconv.FormatBool(isCI),
-		"liquid":  strconv.FormatBool(isLiquid),
-		"ln":      strconv.FormatBool(isLN),
+		"running":                 strconv.FormatBool(true),
+		"ci":                      strconv.FormatBool(isCI),
+		"ln":                      strconv.FormatBool(isLN),
+		"liquid":                  strconv.FormatBool(isLiquid),
+		"datadir":                 datadir,
+		"network":                 "regtest",
+		"chopsticks_bitcoin_port": strconv.Itoa(bitcoinPort),
+		"chopsticks_liquid_port":  strconv.Itoa(liquidPort),
 	}); err != nil {
 		return err
 	}
@@ -99,14 +131,7 @@ func startAction(ctx *cli.Context) error {
 	fmt.Println("ENDPOINTS")
 
 	for _, nameAndEndpoint := range services {
-		name := nameAndEndpoint[0]
-		endpoint := nameAndEndpoint[1]
-
-		if !isLiquid && strings.Contains(name, "liquid") {
-			continue
-		}
-
-		fmt.Println(name + " " + endpoint)
+		fmt.Printf("%s\n", nameAndEndpoint)
 	}
 
 	return nil

@@ -1,0 +1,814 @@
+
+
+
+
+
+2024-12-28T02:57:35Z Elements Core version v23.2.4 (release build)
+2024-12-28T02:57:35Z Validating signatures for all blocks.
+2024-12-28T02:57:35Z Setting nMinimumChainWork=0000000000000000000000000000000000000000000000000000000000000000
+2024-12-28T02:57:35Z Using the 'arm_shani(1way,2way)' SHA256 implementation
+2024-12-28T02:57:35Z Default data directory /home/elements/.elements
+2024-12-28T02:57:35Z Using data directory /config/liquidv1
+2024-12-28T02:57:35Z Config file: /config/elements.conf (not found, skipping)
+2024-12-28T02:57:35Z Command-line arg: datadir="config"
+2024-12-28T02:57:35Z Using at most 125 automatic connections (1048576 file descriptors available)
+2024-12-28T02:57:35Z Warning: relative datadir option 'config' specified, which will be interpreted relative to the current working directory '/'. This is fragile, because if bitcoin is started in the future from a different location, it will be unable to locate the current data files. There could also be data loss if bitcoin is started while in a temporary directory.
+2024-12-28T02:57:35Z Using 8 MiB out of 16/4 requested for signature cache, able to store 262144 elements
+2024-12-28T02:57:35Z Using 8 MiB out of 16/4 requested for script execution cache, able to store 262144 elements
+2024-12-28T02:57:35Z Using 8 MiB out of 8/4 requested for rangeproof cache, able to store 262144 elements
+2024-12-28T02:57:35Z Using 8 MiB out of 8/4 requested for surjectionproof cache, able to store 262144 elements
+2024-12-28T02:57:35Z Script verification uses 9 additional threads
+2024-12-28T02:57:35Z scheduler thread start
+2024-12-28T02:57:35Z libevent: getaddrinfo: address family for nodename not supported
+2024-12-28T02:57:35Z Binding RPC on address ::1 port 7041 failed.
+2024-12-28T02:57:35Z HTTP: creating work queue of depth 16
+2024-12-28T02:57:35Z Using random cookie authentication.
+2024-12-28T02:57:35Z Generated RPC authentication cookie /config/liquidv1/.cookie
+2024-12-28T02:57:35Z HTTP: starting 4 worker threads
+2024-12-28T02:57:35Z Using wallet directory /config/liquidv1/wallets
+2024-12-28T02:57:35Z init message: Verifying wallet(s)…
+2024-12-28T02:57:35Z Using /16 prefix for IP bucketing
+2024-12-28T02:57:35Z init message: Loading P2P addresses…
+2024-12-28T02:57:35Z Creating peers.dat because the file was not found ("/config/liquidv1/peers.dat")
+2024-12-28T02:57:35Z init message: Loading banlist…
+2024-12-28T02:57:35Z Recreating the banlist database
+2024-12-28T02:57:35Z SetNetworkActive: true
+2024-12-28T02:57:35Z Failed to read fee estimates from /config/liquidv1/fee_estimates.dat. Continue anyway.
+2024-12-28T02:57:35Z Cache configuration:
+2024-12-28T02:57:35Z * Using 2.0 MiB for block index database
+2024-12-28T02:57:35Z * Using 8.0 MiB for chain state database
+2024-12-28T02:57:35Z * Using 440.0 MiB for in-memory UTXO set (plus up to 286.1 MiB of unused mempool space)
+2024-12-28T02:57:35Z init message: Loading block index…
+2024-12-28T02:57:35Z Switching active chainstate to Chainstate [ibd] @ height -1 (null)
+2024-12-28T02:57:35Z Opening LevelDB in /config/liquidv1/blocks/index
+2024-12-28T02:57:35Z Opened LevelDB successfully
+2024-12-28T02:57:35Z Using obfuscation key for /config/liquidv1/blocks/index: 0000000000000000
+2024-12-28T02:57:35Z LoadBlockIndexGuts: loaded 0 total / 0 untrimmed (fully in-memory) headers
+2024-12-28T02:57:35Z LoadBlockIndexDB: last block file = 0
+2024-12-28T02:57:35Z LoadBlockIndexDB: last block file info: CBlockFileInfo(blocks=0, size=0, heights=0...0, time=1970-01-01...1970-01-01)
+2024-12-28T02:57:35Z Checking all blk files are present...
+2024-12-28T02:57:35Z Initializing databases...
+2024-12-28T02:57:35Z Opening LevelDB in /config/liquidv1/chainstate
+2024-12-28T02:57:35Z Opened LevelDB successfully
+2024-12-28T02:57:35Z Wrote new obfuscate key for /config/liquidv1/chainstate: 5f59626fb7c1dab8
+2024-12-28T02:57:35Z Using obfuscation key for /config/liquidv1/chainstate: 5f59626fb7c1dab8
+2024-12-28T02:57:35Z init message: Verifying blocks…
+2024-12-28T02:57:35Z  block index              25ms
+2024-12-28T02:57:35Z loadblk thread start
+2024-12-28T02:57:35Z UpdateTip: new best=1466275836220db2944ca059a3a10ef6fd2ea684b0688d2c379296888a206003 height=0 version=0x00000001 log2_work=0.000000 tx=1 date='2011-02-02T23:16:42Z' progress=0.000000 cache=0.0MiB(0txo)
+2024-12-28T02:57:35Z Failed to open mempool file from disk. Continuing anyway.
+2024-12-28T02:57:35Z loadblk thread exit
+2024-12-28T02:57:35Z block tree size = 1
+2024-12-28T02:57:35Z nBestHeight = 0
+2024-12-28T02:57:35Z torcontrol thread start
+2024-12-28T02:57:35Z Bound to 127.0.0.1:37041
+2024-12-28T02:57:35Z Bound to [::]:7042
+2024-12-28T02:57:35Z Bound to 0.0.0.0:7042
+2024-12-28T02:57:35Z 0 block-relay-only anchors will be tried for connections.
+2024-12-28T02:57:35Z init message: Starting network threads…
+2024-12-28T02:57:35Z net thread start
+2024-12-28T02:57:35Z opencon thread start
+2024-12-28T02:57:35Z msghand thread start
+2024-12-28T02:57:35Z dnsseed thread start
+2024-12-28T02:57:35Z addcon thread start
+2024-12-28T02:57:35Z Loading addresses from DNS seed seed.liquidnetwork.io
+2024-12-28T02:57:35Z init message: Awaiting mainchain RPC warmup
+2024-12-28T02:57:35Z ERROR: Failure connecting to mainchain daemon RPC: Could not locate mainchain RPC credentials. No authentication cookie could be found, and no mainchainrpcpassword is set in the configuration file (elements.conf)
+2024-12-28T02:57:35Z Error: ERROR: elements is set to verify pegins but cannot get a valid response from the mainchain daemon. Please check debug.log for more information.
+
+If you haven't setup a bitcoind please get the latest stable version from https://bitcoincore.org/en/download/ or if you do not need to validate pegins set in your elements configuration validatepegin=0
+2024-12-28T02:57:35Z tor: Thread interrupt
+2024-12-28T02:57:35Z Shutdown: In progress...
+2024-12-28T02:57:35Z opencon thread exit
+2024-12-28T02:57:35Z addcon thread exit
+2024-12-28T02:57:35Z torcontrol thread exit
+2024-12-28T02:57:35Z net thread exit
+2024-12-28T02:57:35Z msghand thread exit
+2024-12-28T02:57:35Z 6 addresses found from DNS seeds
+2024-12-28T02:57:35Z dnsseed thread exit
+2024-12-28T02:57:35Z DumpAnchors: Flush 0 outbound block-relay-only peer addresses to anchors.dat started
+2024-12-28T02:57:35Z DumpAnchors: Flush 0 outbound block-relay-only peer addresses to anchors.dat completed (0.00s)
+2024-12-28T02:57:35Z scheduler thread exit
+2024-12-28T02:57:35Z Writing 0 unbroadcast transactions to disk.
+2024-12-28T02:57:35Z Dumped mempool: 2e-05s to copy, 0.001859s to dump
+2024-12-28T02:57:35Z Shutdown: done
+
+
+
+
+
+2024-12-28T02:57:36Z Elements Core version v23.2.4 (release build)
+2024-12-28T02:57:36Z Validating signatures for all blocks.
+2024-12-28T02:57:36Z Setting nMinimumChainWork=0000000000000000000000000000000000000000000000000000000000000000
+2024-12-28T02:57:36Z Using the 'arm_shani(1way,2way)' SHA256 implementation
+2024-12-28T02:57:36Z Default data directory /home/elements/.elements
+2024-12-28T02:57:36Z Using data directory /config/liquidv1
+2024-12-28T02:57:36Z Config file: /config/elements.conf (not found, skipping)
+2024-12-28T02:57:36Z Command-line arg: datadir="config"
+2024-12-28T02:57:36Z Using at most 125 automatic connections (1048576 file descriptors available)
+2024-12-28T02:57:36Z Warning: relative datadir option 'config' specified, which will be interpreted relative to the current working directory '/'. This is fragile, because if bitcoin is started in the future from a different location, it will be unable to locate the current data files. There could also be data loss if bitcoin is started while in a temporary directory.
+2024-12-28T02:57:36Z Using 8 MiB out of 16/4 requested for signature cache, able to store 262144 elements
+2024-12-28T02:57:36Z Using 8 MiB out of 16/4 requested for script execution cache, able to store 262144 elements
+2024-12-28T02:57:36Z Using 8 MiB out of 8/4 requested for rangeproof cache, able to store 262144 elements
+2024-12-28T02:57:36Z Using 8 MiB out of 8/4 requested for surjectionproof cache, able to store 262144 elements
+2024-12-28T02:57:36Z Script verification uses 9 additional threads
+2024-12-28T02:57:36Z scheduler thread start
+2024-12-28T02:57:36Z libevent: getaddrinfo: address family for nodename not supported
+2024-12-28T02:57:36Z Binding RPC on address ::1 port 7041 failed.
+2024-12-28T02:57:36Z HTTP: creating work queue of depth 16
+2024-12-28T02:57:36Z Using random cookie authentication.
+2024-12-28T02:57:36Z Generated RPC authentication cookie /config/liquidv1/.cookie
+2024-12-28T02:57:36Z HTTP: starting 4 worker threads
+2024-12-28T02:57:36Z Using wallet directory /config/liquidv1/wallets
+2024-12-28T02:57:36Z init message: Verifying wallet(s)…
+2024-12-28T02:57:36Z Using /16 prefix for IP bucketing
+2024-12-28T02:57:36Z init message: Loading P2P addresses…
+2024-12-28T02:57:36Z Loaded 6 addresses from peers.dat  0ms
+2024-12-28T02:57:36Z init message: Loading banlist…
+2024-12-28T02:57:36Z SetNetworkActive: true
+2024-12-28T02:57:36Z Cache configuration:
+2024-12-28T02:57:36Z * Using 2.0 MiB for block index database
+2024-12-28T02:57:36Z * Using 8.0 MiB for chain state database
+2024-12-28T02:57:36Z * Using 440.0 MiB for in-memory UTXO set (plus up to 286.1 MiB of unused mempool space)
+2024-12-28T02:57:36Z init message: Loading block index…
+2024-12-28T02:57:36Z Switching active chainstate to Chainstate [ibd] @ height -1 (null)
+2024-12-28T02:57:36Z Opening LevelDB in /config/liquidv1/blocks/index
+2024-12-28T02:57:36Z Opened LevelDB successfully
+2024-12-28T02:57:36Z Using obfuscation key for /config/liquidv1/blocks/index: 0000000000000000
+2024-12-28T02:57:36Z LoadBlockIndexGuts: loaded 1 total / 1 untrimmed (fully in-memory) headers
+2024-12-28T02:57:36Z LoadBlockIndexDB: last block file = 0
+2024-12-28T02:57:36Z LoadBlockIndexDB: last block file info: CBlockFileInfo(blocks=1, size=732, heights=0...0, time=2011-02-02...2011-02-02)
+2024-12-28T02:57:36Z Checking all blk files are present...
+2024-12-28T02:57:36Z Opening LevelDB in /config/liquidv1/chainstate
+2024-12-28T02:57:36Z Opened LevelDB successfully
+2024-12-28T02:57:36Z Using obfuscation key for /config/liquidv1/chainstate: 5f59626fb7c1dab8
+2024-12-28T02:57:36Z Loaded best chain: hashBestChain=1466275836220db2944ca059a3a10ef6fd2ea684b0688d2c379296888a206003 height=0 date=2011-02-02T23:16:42Z progress=0.000000
+2024-12-28T02:57:36Z init message: Verifying blocks…
+2024-12-28T02:57:36Z  block index              10ms
+2024-12-28T02:57:36Z block tree size = 1
+2024-12-28T02:57:36Z nBestHeight = 0
+2024-12-28T02:57:36Z loadblk thread start
+2024-12-28T02:57:36Z Bound to 127.0.0.1:37041
+2024-12-28T02:57:36Z Bound to [::]:7042
+2024-12-28T02:57:36Z Bound to 0.0.0.0:7042
+2024-12-28T02:57:36Z torcontrol thread start
+2024-12-28T02:57:36Z Imported mempool transactions from disk: 0 succeeded, 0 failed, 0 expired, 0 already there, 0 waiting for initial broadcast
+2024-12-28T02:57:36Z loadblk thread exit
+2024-12-28T02:57:36Z Loaded 0 addresses from "anchors.dat"
+2024-12-28T02:57:36Z 0 block-relay-only anchors will be tried for connections.
+2024-12-28T02:57:36Z init message: Starting network threads…
+2024-12-28T02:57:36Z net thread start
+2024-12-28T02:57:36Z dnsseed thread start
+2024-12-28T02:57:36Z Waiting 11 seconds before querying DNS seeds.
+2024-12-28T02:57:36Z msghand thread start
+2024-12-28T02:57:36Z addcon thread start
+2024-12-28T02:57:36Z opencon thread start
+2024-12-28T02:57:36Z init message: Awaiting mainchain RPC warmup
+2024-12-28T02:57:36Z ERROR: Failure connecting to mainchain daemon RPC: Could not locate mainchain RPC credentials. No authentication cookie could be found, and no mainchainrpcpassword is set in the configuration file (elements.conf)
+2024-12-28T02:57:36Z Error: ERROR: elements is set to verify pegins but cannot get a valid response from the mainchain daemon. Please check debug.log for more information.
+
+If you haven't setup a bitcoind please get the latest stable version from https://bitcoincore.org/en/download/ or if you do not need to validate pegins set in your elements configuration validatepegin=0
+2024-12-28T02:57:36Z tor: Thread interrupt
+2024-12-28T02:57:36Z Shutdown: In progress...
+2024-12-28T02:57:36Z dnsseed thread exit
+2024-12-28T02:57:36Z torcontrol thread exit
+2024-12-28T02:57:36Z opencon thread exit
+2024-12-28T02:57:36Z addcon thread exit
+2024-12-28T02:57:36Z net thread exit
+2024-12-28T02:57:36Z msghand thread exit
+2024-12-28T02:57:36Z DumpAnchors: Flush 0 outbound block-relay-only peer addresses to anchors.dat started
+2024-12-28T02:57:36Z DumpAnchors: Flush 0 outbound block-relay-only peer addresses to anchors.dat completed (0.00s)
+2024-12-28T02:57:36Z scheduler thread exit
+2024-12-28T02:57:36Z Writing 0 unbroadcast transactions to disk.
+2024-12-28T02:57:36Z Dumped mempool: 5e-06s to copy, 0.001667s to dump
+2024-12-28T02:57:36Z Shutdown: done
+
+
+
+
+
+2024-12-28T02:57:36Z Elements Core version v23.2.4 (release build)
+2024-12-28T02:57:36Z Validating signatures for all blocks.
+2024-12-28T02:57:36Z Setting nMinimumChainWork=0000000000000000000000000000000000000000000000000000000000000000
+2024-12-28T02:57:36Z Using the 'arm_shani(1way,2way)' SHA256 implementation
+2024-12-28T02:57:36Z Default data directory /home/elements/.elements
+2024-12-28T02:57:36Z Using data directory /config/liquidv1
+2024-12-28T02:57:36Z Config file: /config/elements.conf (not found, skipping)
+2024-12-28T02:57:36Z Command-line arg: datadir="config"
+2024-12-28T02:57:36Z Using at most 125 automatic connections (1048576 file descriptors available)
+2024-12-28T02:57:36Z Warning: relative datadir option 'config' specified, which will be interpreted relative to the current working directory '/'. This is fragile, because if bitcoin is started in the future from a different location, it will be unable to locate the current data files. There could also be data loss if bitcoin is started while in a temporary directory.
+2024-12-28T02:57:36Z Using 8 MiB out of 16/4 requested for signature cache, able to store 262144 elements
+2024-12-28T02:57:36Z Using 8 MiB out of 16/4 requested for script execution cache, able to store 262144 elements
+2024-12-28T02:57:36Z Using 8 MiB out of 8/4 requested for rangeproof cache, able to store 262144 elements
+2024-12-28T02:57:36Z Using 8 MiB out of 8/4 requested for surjectionproof cache, able to store 262144 elements
+2024-12-28T02:57:36Z Script verification uses 9 additional threads
+2024-12-28T02:57:36Z scheduler thread start
+2024-12-28T02:57:36Z libevent: getaddrinfo: address family for nodename not supported
+2024-12-28T02:57:36Z Binding RPC on address ::1 port 7041 failed.
+2024-12-28T02:57:36Z HTTP: creating work queue of depth 16
+2024-12-28T02:57:36Z Using random cookie authentication.
+2024-12-28T02:57:36Z Generated RPC authentication cookie /config/liquidv1/.cookie
+2024-12-28T02:57:36Z HTTP: starting 4 worker threads
+2024-12-28T02:57:36Z Using wallet directory /config/liquidv1/wallets
+2024-12-28T02:57:36Z init message: Verifying wallet(s)…
+2024-12-28T02:57:36Z Using /16 prefix for IP bucketing
+2024-12-28T02:57:36Z init message: Loading P2P addresses…
+2024-12-28T02:57:36Z Loaded 6 addresses from peers.dat  0ms
+2024-12-28T02:57:36Z init message: Loading banlist…
+2024-12-28T02:57:36Z SetNetworkActive: true
+2024-12-28T02:57:36Z Cache configuration:
+2024-12-28T02:57:36Z * Using 2.0 MiB for block index database
+2024-12-28T02:57:36Z * Using 8.0 MiB for chain state database
+2024-12-28T02:57:36Z * Using 440.0 MiB for in-memory UTXO set (plus up to 286.1 MiB of unused mempool space)
+2024-12-28T02:57:36Z init message: Loading block index…
+2024-12-28T02:57:36Z Switching active chainstate to Chainstate [ibd] @ height -1 (null)
+2024-12-28T02:57:36Z Opening LevelDB in /config/liquidv1/blocks/index
+2024-12-28T02:57:36Z Opened LevelDB successfully
+2024-12-28T02:57:36Z Using obfuscation key for /config/liquidv1/blocks/index: 0000000000000000
+2024-12-28T02:57:36Z LoadBlockIndexGuts: loaded 1 total / 1 untrimmed (fully in-memory) headers
+2024-12-28T02:57:36Z LoadBlockIndexDB: last block file = 0
+2024-12-28T02:57:36Z LoadBlockIndexDB: last block file info: CBlockFileInfo(blocks=1, size=732, heights=0...0, time=2011-02-02...2011-02-02)
+2024-12-28T02:57:36Z Checking all blk files are present...
+2024-12-28T02:57:36Z Opening LevelDB in /config/liquidv1/chainstate
+2024-12-28T02:57:36Z Opened LevelDB successfully
+2024-12-28T02:57:36Z Using obfuscation key for /config/liquidv1/chainstate: 5f59626fb7c1dab8
+2024-12-28T02:57:36Z Loaded best chain: hashBestChain=1466275836220db2944ca059a3a10ef6fd2ea684b0688d2c379296888a206003 height=0 date=2011-02-02T23:16:42Z progress=0.000000
+2024-12-28T02:57:36Z init message: Verifying blocks…
+2024-12-28T02:57:36Z  block index              10ms
+2024-12-28T02:57:36Z block tree size = 1
+2024-12-28T02:57:36Z nBestHeight = 0
+2024-12-28T02:57:36Z loadblk thread start
+2024-12-28T02:57:36Z torcontrol thread start
+2024-12-28T02:57:36Z Imported mempool transactions from disk: 0 succeeded, 0 failed, 0 expired, 0 already there, 0 waiting for initial broadcast
+2024-12-28T02:57:36Z loadblk thread exit
+2024-12-28T02:57:36Z Bound to 127.0.0.1:37041
+2024-12-28T02:57:36Z Bound to [::]:7042
+2024-12-28T02:57:36Z Bound to 0.0.0.0:7042
+2024-12-28T02:57:36Z Loaded 0 addresses from "anchors.dat"
+2024-12-28T02:57:36Z 0 block-relay-only anchors will be tried for connections.
+2024-12-28T02:57:36Z init message: Starting network threads…
+2024-12-28T02:57:36Z net thread start
+2024-12-28T02:57:36Z dnsseed thread start
+2024-12-28T02:57:36Z Waiting 11 seconds before querying DNS seeds.
+2024-12-28T02:57:36Z addcon thread start
+2024-12-28T02:57:36Z opencon thread start
+2024-12-28T02:57:36Z msghand thread start
+2024-12-28T02:57:36Z init message: Awaiting mainchain RPC warmup
+2024-12-28T02:57:36Z ERROR: Failure connecting to mainchain daemon RPC: Could not locate mainchain RPC credentials. No authentication cookie could be found, and no mainchainrpcpassword is set in the configuration file (elements.conf)
+2024-12-28T02:57:36Z Error: ERROR: elements is set to verify pegins but cannot get a valid response from the mainchain daemon. Please check debug.log for more information.
+
+If you haven't setup a bitcoind please get the latest stable version from https://bitcoincore.org/en/download/ or if you do not need to validate pegins set in your elements configuration validatepegin=0
+2024-12-28T02:57:36Z tor: Thread interrupt
+2024-12-28T02:57:36Z Shutdown: In progress...
+2024-12-28T02:57:36Z dnsseed thread exit
+2024-12-28T02:57:36Z opencon thread exit
+2024-12-28T02:57:36Z addcon thread exit
+2024-12-28T02:57:36Z torcontrol thread exit
+2024-12-28T02:57:36Z net thread exit
+2024-12-28T02:57:36Z msghand thread exit
+2024-12-28T02:57:36Z DumpAnchors: Flush 0 outbound block-relay-only peer addresses to anchors.dat started
+2024-12-28T02:57:36Z DumpAnchors: Flush 0 outbound block-relay-only peer addresses to anchors.dat completed (0.00s)
+2024-12-28T02:57:36Z scheduler thread exit
+2024-12-28T02:57:36Z Writing 0 unbroadcast transactions to disk.
+2024-12-28T02:57:36Z Dumped mempool: 4e-06s to copy, 0.001604s to dump
+2024-12-28T02:57:36Z Shutdown: done
+
+
+
+
+
+2024-12-28T02:57:37Z Elements Core version v23.2.4 (release build)
+2024-12-28T02:57:37Z Validating signatures for all blocks.
+2024-12-28T02:57:37Z Setting nMinimumChainWork=0000000000000000000000000000000000000000000000000000000000000000
+2024-12-28T02:57:37Z Using the 'arm_shani(1way,2way)' SHA256 implementation
+2024-12-28T02:57:37Z Default data directory /home/elements/.elements
+2024-12-28T02:57:37Z Using data directory /config/liquidv1
+2024-12-28T02:57:37Z Config file: /config/elements.conf (not found, skipping)
+2024-12-28T02:57:37Z Command-line arg: datadir="config"
+2024-12-28T02:57:37Z Using at most 125 automatic connections (1048576 file descriptors available)
+2024-12-28T02:57:37Z Warning: relative datadir option 'config' specified, which will be interpreted relative to the current working directory '/'. This is fragile, because if bitcoin is started in the future from a different location, it will be unable to locate the current data files. There could also be data loss if bitcoin is started while in a temporary directory.
+2024-12-28T02:57:37Z Using 8 MiB out of 16/4 requested for signature cache, able to store 262144 elements
+2024-12-28T02:57:37Z Using 8 MiB out of 16/4 requested for script execution cache, able to store 262144 elements
+2024-12-28T02:57:37Z Using 8 MiB out of 8/4 requested for rangeproof cache, able to store 262144 elements
+2024-12-28T02:57:37Z Using 8 MiB out of 8/4 requested for surjectionproof cache, able to store 262144 elements
+2024-12-28T02:57:37Z Script verification uses 9 additional threads
+2024-12-28T02:57:37Z scheduler thread start
+2024-12-28T02:57:37Z libevent: getaddrinfo: address family for nodename not supported
+2024-12-28T02:57:37Z Binding RPC on address ::1 port 7041 failed.
+2024-12-28T02:57:37Z HTTP: creating work queue of depth 16
+2024-12-28T02:57:37Z Using random cookie authentication.
+2024-12-28T02:57:37Z Generated RPC authentication cookie /config/liquidv1/.cookie
+2024-12-28T02:57:37Z HTTP: starting 4 worker threads
+2024-12-28T02:57:37Z Using wallet directory /config/liquidv1/wallets
+2024-12-28T02:57:37Z init message: Verifying wallet(s)…
+2024-12-28T02:57:37Z Using /16 prefix for IP bucketing
+2024-12-28T02:57:37Z init message: Loading P2P addresses…
+2024-12-28T02:57:37Z Loaded 6 addresses from peers.dat  0ms
+2024-12-28T02:57:37Z init message: Loading banlist…
+2024-12-28T02:57:37Z SetNetworkActive: true
+2024-12-28T02:57:37Z Cache configuration:
+2024-12-28T02:57:37Z * Using 2.0 MiB for block index database
+2024-12-28T02:57:37Z * Using 8.0 MiB for chain state database
+2024-12-28T02:57:37Z * Using 440.0 MiB for in-memory UTXO set (plus up to 286.1 MiB of unused mempool space)
+2024-12-28T02:57:37Z init message: Loading block index…
+2024-12-28T02:57:37Z Switching active chainstate to Chainstate [ibd] @ height -1 (null)
+2024-12-28T02:57:37Z Opening LevelDB in /config/liquidv1/blocks/index
+2024-12-28T02:57:37Z Opened LevelDB successfully
+2024-12-28T02:57:37Z Using obfuscation key for /config/liquidv1/blocks/index: 0000000000000000
+2024-12-28T02:57:37Z LoadBlockIndexGuts: loaded 1 total / 1 untrimmed (fully in-memory) headers
+2024-12-28T02:57:37Z LoadBlockIndexDB: last block file = 0
+2024-12-28T02:57:37Z LoadBlockIndexDB: last block file info: CBlockFileInfo(blocks=1, size=732, heights=0...0, time=2011-02-02...2011-02-02)
+2024-12-28T02:57:37Z Checking all blk files are present...
+2024-12-28T02:57:37Z Opening LevelDB in /config/liquidv1/chainstate
+2024-12-28T02:57:37Z Opened LevelDB successfully
+2024-12-28T02:57:37Z Using obfuscation key for /config/liquidv1/chainstate: 5f59626fb7c1dab8
+2024-12-28T02:57:37Z Loaded best chain: hashBestChain=1466275836220db2944ca059a3a10ef6fd2ea684b0688d2c379296888a206003 height=0 date=2011-02-02T23:16:42Z progress=0.000000
+2024-12-28T02:57:37Z init message: Verifying blocks…
+2024-12-28T02:57:37Z  block index              11ms
+2024-12-28T02:57:37Z block tree size = 1
+2024-12-28T02:57:37Z nBestHeight = 0
+2024-12-28T02:57:37Z loadblk thread start
+2024-12-28T02:57:37Z torcontrol thread start
+2024-12-28T02:57:37Z Imported mempool transactions from disk: 0 succeeded, 0 failed, 0 expired, 0 already there, 0 waiting for initial broadcast
+2024-12-28T02:57:37Z Bound to 127.0.0.1:37041
+2024-12-28T02:57:37Z Bound to [::]:7042
+2024-12-28T02:57:37Z loadblk thread exit
+2024-12-28T02:57:37Z Bound to 0.0.0.0:7042
+2024-12-28T02:57:37Z Loaded 0 addresses from "anchors.dat"
+2024-12-28T02:57:37Z 0 block-relay-only anchors will be tried for connections.
+2024-12-28T02:57:37Z init message: Starting network threads…
+2024-12-28T02:57:37Z net thread start
+2024-12-28T02:57:37Z addcon thread start
+2024-12-28T02:57:37Z dnsseed thread start
+2024-12-28T02:57:37Z opencon thread start
+2024-12-28T02:57:37Z msghand thread start
+2024-12-28T02:57:37Z Waiting 11 seconds before querying DNS seeds.
+2024-12-28T02:57:37Z init message: Awaiting mainchain RPC warmup
+2024-12-28T02:57:37Z ERROR: Failure connecting to mainchain daemon RPC: Could not locate mainchain RPC credentials. No authentication cookie could be found, and no mainchainrpcpassword is set in the configuration file (elements.conf)
+2024-12-28T02:57:37Z Error: ERROR: elements is set to verify pegins but cannot get a valid response from the mainchain daemon. Please check debug.log for more information.
+
+If you haven't setup a bitcoind please get the latest stable version from https://bitcoincore.org/en/download/ or if you do not need to validate pegins set in your elements configuration validatepegin=0
+2024-12-28T02:57:37Z tor: Thread interrupt
+2024-12-28T02:57:37Z Shutdown: In progress...
+2024-12-28T02:57:37Z torcontrol thread exit
+2024-12-28T02:57:37Z addcon thread exit
+2024-12-28T02:57:37Z opencon thread exit
+2024-12-28T02:57:37Z dnsseed thread exit
+2024-12-28T02:57:37Z net thread exit
+2024-12-28T02:57:37Z msghand thread exit
+2024-12-28T02:57:37Z DumpAnchors: Flush 0 outbound block-relay-only peer addresses to anchors.dat started
+2024-12-28T02:57:37Z DumpAnchors: Flush 0 outbound block-relay-only peer addresses to anchors.dat completed (0.00s)
+2024-12-28T02:57:37Z scheduler thread exit
+2024-12-28T02:57:37Z Writing 0 unbroadcast transactions to disk.
+2024-12-28T02:57:37Z Dumped mempool: 6e-06s to copy, 0.002077s to dump
+2024-12-28T02:57:37Z Shutdown: done
+
+
+
+
+
+2024-12-28T02:57:38Z Elements Core version v23.2.4 (release build)
+2024-12-28T02:57:38Z Validating signatures for all blocks.
+2024-12-28T02:57:38Z Setting nMinimumChainWork=0000000000000000000000000000000000000000000000000000000000000000
+2024-12-28T02:57:38Z Using the 'arm_shani(1way,2way)' SHA256 implementation
+2024-12-28T02:57:38Z Default data directory /home/elements/.elements
+2024-12-28T02:57:38Z Using data directory /config/liquidv1
+2024-12-28T02:57:38Z Config file: /config/elements.conf (not found, skipping)
+2024-12-28T02:57:38Z Command-line arg: datadir="config"
+2024-12-28T02:57:38Z Using at most 125 automatic connections (1048576 file descriptors available)
+2024-12-28T02:57:38Z Warning: relative datadir option 'config' specified, which will be interpreted relative to the current working directory '/'. This is fragile, because if bitcoin is started in the future from a different location, it will be unable to locate the current data files. There could also be data loss if bitcoin is started while in a temporary directory.
+2024-12-28T02:57:38Z Using 8 MiB out of 16/4 requested for signature cache, able to store 262144 elements
+2024-12-28T02:57:38Z Using 8 MiB out of 16/4 requested for script execution cache, able to store 262144 elements
+2024-12-28T02:57:38Z Using 8 MiB out of 8/4 requested for rangeproof cache, able to store 262144 elements
+2024-12-28T02:57:38Z Using 8 MiB out of 8/4 requested for surjectionproof cache, able to store 262144 elements
+2024-12-28T02:57:38Z Script verification uses 9 additional threads
+2024-12-28T02:57:38Z scheduler thread start
+2024-12-28T02:57:38Z libevent: getaddrinfo: address family for nodename not supported
+2024-12-28T02:57:38Z Binding RPC on address ::1 port 7041 failed.
+2024-12-28T02:57:38Z HTTP: creating work queue of depth 16
+2024-12-28T02:57:38Z Using random cookie authentication.
+2024-12-28T02:57:38Z Generated RPC authentication cookie /config/liquidv1/.cookie
+2024-12-28T02:57:38Z HTTP: starting 4 worker threads
+2024-12-28T02:57:38Z Using wallet directory /config/liquidv1/wallets
+2024-12-28T02:57:38Z init message: Verifying wallet(s)…
+2024-12-28T02:57:38Z Using /16 prefix for IP bucketing
+2024-12-28T02:57:38Z init message: Loading P2P addresses…
+2024-12-28T02:57:38Z Loaded 6 addresses from peers.dat  0ms
+2024-12-28T02:57:38Z init message: Loading banlist…
+2024-12-28T02:57:38Z SetNetworkActive: true
+2024-12-28T02:57:38Z Cache configuration:
+2024-12-28T02:57:38Z * Using 2.0 MiB for block index database
+2024-12-28T02:57:38Z * Using 8.0 MiB for chain state database
+2024-12-28T02:57:38Z * Using 440.0 MiB for in-memory UTXO set (plus up to 286.1 MiB of unused mempool space)
+2024-12-28T02:57:38Z init message: Loading block index…
+2024-12-28T02:57:38Z Switching active chainstate to Chainstate [ibd] @ height -1 (null)
+2024-12-28T02:57:38Z Opening LevelDB in /config/liquidv1/blocks/index
+2024-12-28T02:57:38Z Opened LevelDB successfully
+2024-12-28T02:57:38Z Using obfuscation key for /config/liquidv1/blocks/index: 0000000000000000
+2024-12-28T02:57:38Z LoadBlockIndexGuts: loaded 1 total / 1 untrimmed (fully in-memory) headers
+2024-12-28T02:57:38Z LoadBlockIndexDB: last block file = 0
+2024-12-28T02:57:38Z LoadBlockIndexDB: last block file info: CBlockFileInfo(blocks=1, size=732, heights=0...0, time=2011-02-02...2011-02-02)
+2024-12-28T02:57:38Z Checking all blk files are present...
+2024-12-28T02:57:38Z Opening LevelDB in /config/liquidv1/chainstate
+2024-12-28T02:57:38Z Opened LevelDB successfully
+2024-12-28T02:57:38Z Using obfuscation key for /config/liquidv1/chainstate: 5f59626fb7c1dab8
+2024-12-28T02:57:38Z Loaded best chain: hashBestChain=1466275836220db2944ca059a3a10ef6fd2ea684b0688d2c379296888a206003 height=0 date=2011-02-02T23:16:42Z progress=0.000000
+2024-12-28T02:57:38Z init message: Verifying blocks…
+2024-12-28T02:57:38Z  block index              10ms
+2024-12-28T02:57:38Z block tree size = 1
+2024-12-28T02:57:38Z nBestHeight = 0
+2024-12-28T02:57:38Z loadblk thread start
+2024-12-28T02:57:38Z torcontrol thread start
+2024-12-28T02:57:38Z Imported mempool transactions from disk: 0 succeeded, 0 failed, 0 expired, 0 already there, 0 waiting for initial broadcast
+2024-12-28T02:57:38Z Bound to 127.0.0.1:37041
+2024-12-28T02:57:38Z Bound to [::]:7042
+2024-12-28T02:57:38Z Bound to 0.0.0.0:7042
+2024-12-28T02:57:38Z loadblk thread exit
+2024-12-28T02:57:38Z Loaded 0 addresses from "anchors.dat"
+2024-12-28T02:57:38Z 0 block-relay-only anchors will be tried for connections.
+2024-12-28T02:57:38Z init message: Starting network threads…
+2024-12-28T02:57:38Z net thread start
+2024-12-28T02:57:38Z dnsseed thread start
+2024-12-28T02:57:38Z Waiting 11 seconds before querying DNS seeds.
+2024-12-28T02:57:38Z addcon thread start
+2024-12-28T02:57:38Z opencon thread start
+2024-12-28T02:57:38Z msghand thread start
+2024-12-28T02:57:38Z init message: Awaiting mainchain RPC warmup
+2024-12-28T02:57:38Z ERROR: Failure connecting to mainchain daemon RPC: Could not locate mainchain RPC credentials. No authentication cookie could be found, and no mainchainrpcpassword is set in the configuration file (elements.conf)
+2024-12-28T02:57:38Z Error: ERROR: elements is set to verify pegins but cannot get a valid response from the mainchain daemon. Please check debug.log for more information.
+
+If you haven't setup a bitcoind please get the latest stable version from https://bitcoincore.org/en/download/ or if you do not need to validate pegins set in your elements configuration validatepegin=0
+2024-12-28T02:57:38Z tor: Thread interrupt
+2024-12-28T02:57:38Z Shutdown: In progress...
+2024-12-28T02:57:38Z addcon thread exit
+2024-12-28T02:57:38Z dnsseed thread exit
+2024-12-28T02:57:38Z opencon thread exit
+2024-12-28T02:57:38Z torcontrol thread exit
+2024-12-28T02:57:39Z net thread exit
+2024-12-28T02:57:39Z msghand thread exit
+2024-12-28T02:57:39Z DumpAnchors: Flush 0 outbound block-relay-only peer addresses to anchors.dat started
+2024-12-28T02:57:39Z DumpAnchors: Flush 0 outbound block-relay-only peer addresses to anchors.dat completed (0.00s)
+2024-12-28T02:57:39Z scheduler thread exit
+2024-12-28T02:57:39Z Writing 0 unbroadcast transactions to disk.
+2024-12-28T02:57:39Z Dumped mempool: 2e-06s to copy, 0.00156s to dump
+2024-12-28T02:57:39Z Shutdown: done
+
+
+
+
+
+2024-12-28T02:57:41Z Elements Core version v23.2.4 (release build)
+2024-12-28T02:57:41Z Validating signatures for all blocks.
+2024-12-28T02:57:41Z Setting nMinimumChainWork=0000000000000000000000000000000000000000000000000000000000000000
+2024-12-28T02:57:41Z Using the 'arm_shani(1way,2way)' SHA256 implementation
+2024-12-28T02:57:41Z Default data directory /home/elements/.elements
+2024-12-28T02:57:41Z Using data directory /config/liquidv1
+2024-12-28T02:57:41Z Config file: /config/elements.conf (not found, skipping)
+2024-12-28T02:57:41Z Command-line arg: datadir="config"
+2024-12-28T02:57:41Z Using at most 125 automatic connections (1048576 file descriptors available)
+2024-12-28T02:57:41Z Warning: relative datadir option 'config' specified, which will be interpreted relative to the current working directory '/'. This is fragile, because if bitcoin is started in the future from a different location, it will be unable to locate the current data files. There could also be data loss if bitcoin is started while in a temporary directory.
+2024-12-28T02:57:41Z Using 8 MiB out of 16/4 requested for signature cache, able to store 262144 elements
+2024-12-28T02:57:41Z Using 8 MiB out of 16/4 requested for script execution cache, able to store 262144 elements
+2024-12-28T02:57:41Z Using 8 MiB out of 8/4 requested for rangeproof cache, able to store 262144 elements
+2024-12-28T02:57:41Z Using 8 MiB out of 8/4 requested for surjectionproof cache, able to store 262144 elements
+2024-12-28T02:57:41Z Script verification uses 9 additional threads
+2024-12-28T02:57:41Z scheduler thread start
+2024-12-28T02:57:41Z libevent: getaddrinfo: address family for nodename not supported
+2024-12-28T02:57:41Z Binding RPC on address ::1 port 7041 failed.
+2024-12-28T02:57:41Z HTTP: creating work queue of depth 16
+2024-12-28T02:57:41Z Using random cookie authentication.
+2024-12-28T02:57:41Z Generated RPC authentication cookie /config/liquidv1/.cookie
+2024-12-28T02:57:41Z HTTP: starting 4 worker threads
+2024-12-28T02:57:41Z Using wallet directory /config/liquidv1/wallets
+2024-12-28T02:57:41Z init message: Verifying wallet(s)…
+2024-12-28T02:57:41Z Using /16 prefix for IP bucketing
+2024-12-28T02:57:41Z init message: Loading P2P addresses…
+2024-12-28T02:57:41Z Loaded 6 addresses from peers.dat  0ms
+2024-12-28T02:57:41Z init message: Loading banlist…
+2024-12-28T02:57:41Z SetNetworkActive: true
+2024-12-28T02:57:41Z Cache configuration:
+2024-12-28T02:57:41Z * Using 2.0 MiB for block index database
+2024-12-28T02:57:41Z * Using 8.0 MiB for chain state database
+2024-12-28T02:57:41Z * Using 440.0 MiB for in-memory UTXO set (plus up to 286.1 MiB of unused mempool space)
+2024-12-28T02:57:41Z init message: Loading block index…
+2024-12-28T02:57:41Z Switching active chainstate to Chainstate [ibd] @ height -1 (null)
+2024-12-28T02:57:41Z Opening LevelDB in /config/liquidv1/blocks/index
+2024-12-28T02:57:41Z Opened LevelDB successfully
+2024-12-28T02:57:41Z Using obfuscation key for /config/liquidv1/blocks/index: 0000000000000000
+2024-12-28T02:57:41Z LoadBlockIndexGuts: loaded 1 total / 1 untrimmed (fully in-memory) headers
+2024-12-28T02:57:41Z LoadBlockIndexDB: last block file = 0
+2024-12-28T02:57:41Z LoadBlockIndexDB: last block file info: CBlockFileInfo(blocks=1, size=732, heights=0...0, time=2011-02-02...2011-02-02)
+2024-12-28T02:57:41Z Checking all blk files are present...
+2024-12-28T02:57:41Z Opening LevelDB in /config/liquidv1/chainstate
+2024-12-28T02:57:41Z Opened LevelDB successfully
+2024-12-28T02:57:41Z Using obfuscation key for /config/liquidv1/chainstate: 5f59626fb7c1dab8
+2024-12-28T02:57:41Z Loaded best chain: hashBestChain=1466275836220db2944ca059a3a10ef6fd2ea684b0688d2c379296888a206003 height=0 date=2011-02-02T23:16:42Z progress=0.000000
+2024-12-28T02:57:41Z init message: Verifying blocks…
+2024-12-28T02:57:41Z  block index               9ms
+2024-12-28T02:57:41Z block tree size = 1
+2024-12-28T02:57:41Z nBestHeight = 0
+2024-12-28T02:57:41Z loadblk thread start
+2024-12-28T02:57:41Z torcontrol thread start
+2024-12-28T02:57:41Z Imported mempool transactions from disk: 0 succeeded, 0 failed, 0 expired, 0 already there, 0 waiting for initial broadcast
+2024-12-28T02:57:41Z Bound to 127.0.0.1:37041
+2024-12-28T02:57:41Z Bound to [::]:7042
+2024-12-28T02:57:41Z Bound to 0.0.0.0:7042
+2024-12-28T02:57:41Z loadblk thread exit
+2024-12-28T02:57:41Z Loaded 0 addresses from "anchors.dat"
+2024-12-28T02:57:41Z 0 block-relay-only anchors will be tried for connections.
+2024-12-28T02:57:41Z init message: Starting network threads…
+2024-12-28T02:57:41Z net thread start
+2024-12-28T02:57:41Z dnsseed thread start
+2024-12-28T02:57:41Z Waiting 11 seconds before querying DNS seeds.
+2024-12-28T02:57:41Z opencon thread start
+2024-12-28T02:57:41Z msghand thread start
+2024-12-28T02:57:41Z addcon thread start
+2024-12-28T02:57:41Z init message: Awaiting mainchain RPC warmup
+2024-12-28T02:57:41Z ERROR: Failure connecting to mainchain daemon RPC: Could not locate mainchain RPC credentials. No authentication cookie could be found, and no mainchainrpcpassword is set in the configuration file (elements.conf)
+2024-12-28T02:57:41Z Error: ERROR: elements is set to verify pegins but cannot get a valid response from the mainchain daemon. Please check debug.log for more information.
+
+If you haven't setup a bitcoind please get the latest stable version from https://bitcoincore.org/en/download/ or if you do not need to validate pegins set in your elements configuration validatepegin=0
+2024-12-28T02:57:41Z tor: Thread interrupt
+2024-12-28T02:57:41Z dnsseed thread exit
+2024-12-28T02:57:41Z opencon thread exit
+2024-12-28T02:57:41Z Shutdown: In progress...
+2024-12-28T02:57:41Z addcon thread exit
+2024-12-28T02:57:41Z torcontrol thread exit
+2024-12-28T02:57:41Z net thread exit
+2024-12-28T02:57:41Z msghand thread exit
+2024-12-28T02:57:41Z DumpAnchors: Flush 0 outbound block-relay-only peer addresses to anchors.dat started
+2024-12-28T02:57:41Z DumpAnchors: Flush 0 outbound block-relay-only peer addresses to anchors.dat completed (0.00s)
+2024-12-28T02:57:41Z scheduler thread exit
+2024-12-28T02:57:41Z Writing 0 unbroadcast transactions to disk.
+2024-12-28T02:57:41Z Dumped mempool: 7e-06s to copy, 0.001628s to dump
+2024-12-28T02:57:41Z Shutdown: done
+
+
+
+
+
+2024-12-28T02:57:44Z Elements Core version v23.2.4 (release build)
+2024-12-28T02:57:44Z Validating signatures for all blocks.
+2024-12-28T02:57:44Z Setting nMinimumChainWork=0000000000000000000000000000000000000000000000000000000000000000
+2024-12-28T02:57:44Z Using the 'arm_shani(1way,2way)' SHA256 implementation
+2024-12-28T02:57:44Z Default data directory /home/elements/.elements
+2024-12-28T02:57:44Z Using data directory /config/liquidv1
+2024-12-28T02:57:44Z Config file: /config/elements.conf (not found, skipping)
+2024-12-28T02:57:44Z Command-line arg: datadir="config"
+2024-12-28T02:57:44Z Using at most 125 automatic connections (1048576 file descriptors available)
+2024-12-28T02:57:44Z Warning: relative datadir option 'config' specified, which will be interpreted relative to the current working directory '/'. This is fragile, because if bitcoin is started in the future from a different location, it will be unable to locate the current data files. There could also be data loss if bitcoin is started while in a temporary directory.
+2024-12-28T02:57:44Z Using 8 MiB out of 16/4 requested for signature cache, able to store 262144 elements
+2024-12-28T02:57:44Z Using 8 MiB out of 16/4 requested for script execution cache, able to store 262144 elements
+2024-12-28T02:57:44Z Using 8 MiB out of 8/4 requested for rangeproof cache, able to store 262144 elements
+2024-12-28T02:57:44Z Using 8 MiB out of 8/4 requested for surjectionproof cache, able to store 262144 elements
+2024-12-28T02:57:44Z Script verification uses 9 additional threads
+2024-12-28T02:57:44Z scheduler thread start
+2024-12-28T02:57:44Z libevent: getaddrinfo: address family for nodename not supported
+2024-12-28T02:57:44Z Binding RPC on address ::1 port 7041 failed.
+2024-12-28T02:57:44Z HTTP: creating work queue of depth 16
+2024-12-28T02:57:44Z Using random cookie authentication.
+2024-12-28T02:57:44Z Generated RPC authentication cookie /config/liquidv1/.cookie
+2024-12-28T02:57:44Z HTTP: starting 4 worker threads
+2024-12-28T02:57:44Z Using wallet directory /config/liquidv1/wallets
+2024-12-28T02:57:44Z init message: Verifying wallet(s)…
+2024-12-28T02:57:44Z Using /16 prefix for IP bucketing
+2024-12-28T02:57:44Z init message: Loading P2P addresses…
+2024-12-28T02:57:44Z Loaded 6 addresses from peers.dat  1ms
+2024-12-28T02:57:44Z init message: Loading banlist…
+2024-12-28T02:57:44Z SetNetworkActive: true
+2024-12-28T02:57:44Z Cache configuration:
+2024-12-28T02:57:44Z * Using 2.0 MiB for block index database
+2024-12-28T02:57:44Z * Using 8.0 MiB for chain state database
+2024-12-28T02:57:44Z * Using 440.0 MiB for in-memory UTXO set (plus up to 286.1 MiB of unused mempool space)
+2024-12-28T02:57:44Z init message: Loading block index…
+2024-12-28T02:57:44Z Switching active chainstate to Chainstate [ibd] @ height -1 (null)
+2024-12-28T02:57:44Z Opening LevelDB in /config/liquidv1/blocks/index
+2024-12-28T02:57:44Z Opened LevelDB successfully
+2024-12-28T02:57:44Z Using obfuscation key for /config/liquidv1/blocks/index: 0000000000000000
+2024-12-28T02:57:44Z LoadBlockIndexGuts: loaded 1 total / 1 untrimmed (fully in-memory) headers
+2024-12-28T02:57:44Z LoadBlockIndexDB: last block file = 0
+2024-12-28T02:57:44Z LoadBlockIndexDB: last block file info: CBlockFileInfo(blocks=1, size=732, heights=0...0, time=2011-02-02...2011-02-02)
+2024-12-28T02:57:44Z Checking all blk files are present...
+2024-12-28T02:57:44Z Opening LevelDB in /config/liquidv1/chainstate
+2024-12-28T02:57:44Z Opened LevelDB successfully
+2024-12-28T02:57:44Z Using obfuscation key for /config/liquidv1/chainstate: 5f59626fb7c1dab8
+2024-12-28T02:57:44Z Loaded best chain: hashBestChain=1466275836220db2944ca059a3a10ef6fd2ea684b0688d2c379296888a206003 height=0 date=2011-02-02T23:16:42Z progress=0.000000
+2024-12-28T02:57:44Z init message: Verifying blocks…
+2024-12-28T02:57:44Z  block index               9ms
+2024-12-28T02:57:44Z block tree size = 1
+2024-12-28T02:57:44Z nBestHeight = 0
+2024-12-28T02:57:44Z loadblk thread start
+2024-12-28T02:57:44Z torcontrol thread start
+2024-12-28T02:57:44Z Imported mempool transactions from disk: 0 succeeded, 0 failed, 0 expired, 0 already there, 0 waiting for initial broadcast
+2024-12-28T02:57:44Z loadblk thread exit
+2024-12-28T02:57:44Z Bound to 127.0.0.1:37041
+2024-12-28T02:57:44Z Bound to [::]:7042
+2024-12-28T02:57:44Z Bound to 0.0.0.0:7042
+2024-12-28T02:57:44Z Loaded 0 addresses from "anchors.dat"
+2024-12-28T02:57:44Z 0 block-relay-only anchors will be tried for connections.
+2024-12-28T02:57:44Z init message: Starting network threads…
+2024-12-28T02:57:44Z net thread start
+2024-12-28T02:57:44Z dnsseed thread start
+2024-12-28T02:57:44Z Waiting 11 seconds before querying DNS seeds.
+2024-12-28T02:57:44Z opencon thread start
+2024-12-28T02:57:44Z msghand thread start
+2024-12-28T02:57:44Z addcon thread start
+2024-12-28T02:57:44Z init message: Awaiting mainchain RPC warmup
+2024-12-28T02:57:44Z ERROR: Failure connecting to mainchain daemon RPC: Could not locate mainchain RPC credentials. No authentication cookie could be found, and no mainchainrpcpassword is set in the configuration file (elements.conf)
+2024-12-28T02:57:44Z Error: ERROR: elements is set to verify pegins but cannot get a valid response from the mainchain daemon. Please check debug.log for more information.
+
+If you haven't setup a bitcoind please get the latest stable version from https://bitcoincore.org/en/download/ or if you do not need to validate pegins set in your elements configuration validatepegin=0
+2024-12-28T02:57:44Z tor: Thread interrupt
+2024-12-28T02:57:44Z Shutdown: In progress...
+2024-12-28T02:57:44Z dnsseed thread exit
+2024-12-28T02:57:44Z torcontrol thread exit
+2024-12-28T02:57:44Z addcon thread exit
+2024-12-28T02:57:44Z opencon thread exit
+2024-12-28T02:57:44Z net thread exit
+2024-12-28T02:57:44Z msghand thread exit
+2024-12-28T02:57:44Z DumpAnchors: Flush 0 outbound block-relay-only peer addresses to anchors.dat started
+2024-12-28T02:57:44Z DumpAnchors: Flush 0 outbound block-relay-only peer addresses to anchors.dat completed (0.00s)
+2024-12-28T02:57:44Z scheduler thread exit
+2024-12-28T02:57:44Z Writing 0 unbroadcast transactions to disk.
+2024-12-28T02:57:44Z Dumped mempool: 2e-06s to copy, 0.001641s to dump
+2024-12-28T02:57:44Z Shutdown: done
+
+
+
+
+
+2024-12-28T02:57:51Z Elements Core version v23.2.4 (release build)
+2024-12-28T02:57:51Z Validating signatures for all blocks.
+2024-12-28T02:57:51Z Setting nMinimumChainWork=0000000000000000000000000000000000000000000000000000000000000000
+2024-12-28T02:57:51Z Using the 'arm_shani(1way,2way)' SHA256 implementation
+2024-12-28T02:57:51Z Default data directory /home/elements/.elements
+2024-12-28T02:57:51Z Using data directory /config/liquidv1
+2024-12-28T02:57:51Z Config file: /config/elements.conf (not found, skipping)
+2024-12-28T02:57:51Z Command-line arg: datadir="config"
+2024-12-28T02:57:51Z Using at most 125 automatic connections (1048576 file descriptors available)
+2024-12-28T02:57:51Z Warning: relative datadir option 'config' specified, which will be interpreted relative to the current working directory '/'. This is fragile, because if bitcoin is started in the future from a different location, it will be unable to locate the current data files. There could also be data loss if bitcoin is started while in a temporary directory.
+2024-12-28T02:57:51Z Using 8 MiB out of 16/4 requested for signature cache, able to store 262144 elements
+2024-12-28T02:57:51Z Using 8 MiB out of 16/4 requested for script execution cache, able to store 262144 elements
+2024-12-28T02:57:51Z Using 8 MiB out of 8/4 requested for rangeproof cache, able to store 262144 elements
+2024-12-28T02:57:51Z Using 8 MiB out of 8/4 requested for surjectionproof cache, able to store 262144 elements
+2024-12-28T02:57:51Z Script verification uses 9 additional threads
+2024-12-28T02:57:51Z scheduler thread start
+2024-12-28T02:57:51Z libevent: getaddrinfo: address family for nodename not supported
+2024-12-28T02:57:51Z Binding RPC on address ::1 port 7041 failed.
+2024-12-28T02:57:51Z HTTP: creating work queue of depth 16
+2024-12-28T02:57:51Z Using random cookie authentication.
+2024-12-28T02:57:51Z Generated RPC authentication cookie /config/liquidv1/.cookie
+2024-12-28T02:57:51Z HTTP: starting 4 worker threads
+2024-12-28T02:57:51Z Using wallet directory /config/liquidv1/wallets
+2024-12-28T02:57:51Z init message: Verifying wallet(s)…
+2024-12-28T02:57:51Z Using /16 prefix for IP bucketing
+2024-12-28T02:57:51Z init message: Loading P2P addresses…
+2024-12-28T02:57:51Z Loaded 6 addresses from peers.dat  0ms
+2024-12-28T02:57:51Z init message: Loading banlist…
+2024-12-28T02:57:51Z SetNetworkActive: true
+2024-12-28T02:57:51Z Cache configuration:
+2024-12-28T02:57:51Z * Using 2.0 MiB for block index database
+2024-12-28T02:57:51Z * Using 8.0 MiB for chain state database
+2024-12-28T02:57:51Z * Using 440.0 MiB for in-memory UTXO set (plus up to 286.1 MiB of unused mempool space)
+2024-12-28T02:57:51Z init message: Loading block index…
+2024-12-28T02:57:51Z Switching active chainstate to Chainstate [ibd] @ height -1 (null)
+2024-12-28T02:57:51Z Opening LevelDB in /config/liquidv1/blocks/index
+2024-12-28T02:57:51Z Opened LevelDB successfully
+2024-12-28T02:57:51Z Using obfuscation key for /config/liquidv1/blocks/index: 0000000000000000
+2024-12-28T02:57:51Z LoadBlockIndexGuts: loaded 1 total / 1 untrimmed (fully in-memory) headers
+2024-12-28T02:57:51Z LoadBlockIndexDB: last block file = 0
+2024-12-28T02:57:51Z LoadBlockIndexDB: last block file info: CBlockFileInfo(blocks=1, size=732, heights=0...0, time=2011-02-02...2011-02-02)
+2024-12-28T02:57:51Z Checking all blk files are present...
+2024-12-28T02:57:51Z Opening LevelDB in /config/liquidv1/chainstate
+2024-12-28T02:57:51Z Opened LevelDB successfully
+2024-12-28T02:57:51Z Using obfuscation key for /config/liquidv1/chainstate: 5f59626fb7c1dab8
+2024-12-28T02:57:51Z Loaded best chain: hashBestChain=1466275836220db2944ca059a3a10ef6fd2ea684b0688d2c379296888a206003 height=0 date=2011-02-02T23:16:42Z progress=0.000000
+2024-12-28T02:57:51Z init message: Verifying blocks…
+2024-12-28T02:57:51Z  block index               8ms
+2024-12-28T02:57:51Z block tree size = 1
+2024-12-28T02:57:51Z nBestHeight = 0
+2024-12-28T02:57:51Z loadblk thread start
+2024-12-28T02:57:51Z torcontrol thread start
+2024-12-28T02:57:51Z Imported mempool transactions from disk: 0 succeeded, 0 failed, 0 expired, 0 already there, 0 waiting for initial broadcast
+2024-12-28T02:57:51Z Bound to 127.0.0.1:37041
+2024-12-28T02:57:51Z Bound to [::]:7042
+2024-12-28T02:57:51Z Bound to 0.0.0.0:7042
+2024-12-28T02:57:51Z loadblk thread exit
+2024-12-28T02:57:51Z Loaded 0 addresses from "anchors.dat"
+2024-12-28T02:57:51Z 0 block-relay-only anchors will be tried for connections.
+2024-12-28T02:57:51Z init message: Starting network threads…
+2024-12-28T02:57:51Z net thread start
+2024-12-28T02:57:51Z dnsseed thread start
+2024-12-28T02:57:51Z Waiting 11 seconds before querying DNS seeds.
+2024-12-28T02:57:51Z opencon thread start
+2024-12-28T02:57:51Z msghand thread start
+2024-12-28T02:57:51Z init message: Awaiting mainchain RPC warmup
+2024-12-28T02:57:51Z ERROR: Failure connecting to mainchain daemon RPC: Could not locate mainchain RPC credentials. No authentication cookie could be found, and no mainchainrpcpassword is set in the configuration file (elements.conf)
+2024-12-28T02:57:51Z Error: ERROR: elements is set to verify pegins but cannot get a valid response from the mainchain daemon. Please check debug.log for more information.
+
+If you haven't setup a bitcoind please get the latest stable version from https://bitcoincore.org/en/download/ or if you do not need to validate pegins set in your elements configuration validatepegin=0
+2024-12-28T02:57:51Z tor: Thread interrupt
+2024-12-28T02:57:51Z Shutdown: In progress...
+2024-12-28T02:57:51Z dnsseed thread exit
+2024-12-28T02:57:51Z opencon thread exit
+2024-12-28T02:57:51Z torcontrol thread exit
+2024-12-28T02:57:51Z addcon thread start
+2024-12-28T02:57:51Z addcon thread exit
+2024-12-28T02:57:51Z net thread exit
+2024-12-28T02:57:51Z msghand thread exit
+2024-12-28T02:57:51Z DumpAnchors: Flush 0 outbound block-relay-only peer addresses to anchors.dat started
+2024-12-28T02:57:51Z DumpAnchors: Flush 0 outbound block-relay-only peer addresses to anchors.dat completed (0.00s)
+2024-12-28T02:57:51Z scheduler thread exit
+2024-12-28T02:57:51Z Writing 0 unbroadcast transactions to disk.
+2024-12-28T02:57:51Z Dumped mempool: 3e-06s to copy, 0.002259s to dump
+2024-12-28T02:57:51Z Shutdown: done
+
+
+
+
+
+2024-12-28T02:58:04Z Elements Core version v23.2.4 (release build)
+2024-12-28T02:58:04Z Validating signatures for all blocks.
+2024-12-28T02:58:04Z Setting nMinimumChainWork=0000000000000000000000000000000000000000000000000000000000000000
+2024-12-28T02:58:04Z Using the 'arm_shani(1way,2way)' SHA256 implementation
+2024-12-28T02:58:04Z Default data directory /home/elements/.elements
+2024-12-28T02:58:04Z Using data directory /config/liquidv1
+2024-12-28T02:58:04Z Config file: /config/elements.conf (not found, skipping)
+2024-12-28T02:58:04Z Command-line arg: datadir="config"
+2024-12-28T02:58:04Z Using at most 125 automatic connections (1048576 file descriptors available)
+2024-12-28T02:58:04Z Warning: relative datadir option 'config' specified, which will be interpreted relative to the current working directory '/'. This is fragile, because if bitcoin is started in the future from a different location, it will be unable to locate the current data files. There could also be data loss if bitcoin is started while in a temporary directory.
+2024-12-28T02:58:04Z Using 8 MiB out of 16/4 requested for signature cache, able to store 262144 elements
+2024-12-28T02:58:04Z Using 8 MiB out of 16/4 requested for script execution cache, able to store 262144 elements
+2024-12-28T02:58:04Z Using 8 MiB out of 8/4 requested for rangeproof cache, able to store 262144 elements
+2024-12-28T02:58:04Z Using 8 MiB out of 8/4 requested for surjectionproof cache, able to store 262144 elements
+2024-12-28T02:58:04Z Script verification uses 9 additional threads
+2024-12-28T02:58:04Z scheduler thread start
+2024-12-28T02:58:04Z libevent: getaddrinfo: address family for nodename not supported
+2024-12-28T02:58:04Z Binding RPC on address ::1 port 7041 failed.
+2024-12-28T02:58:04Z HTTP: creating work queue of depth 16
+2024-12-28T02:58:04Z Using random cookie authentication.
+2024-12-28T02:58:04Z Generated RPC authentication cookie /config/liquidv1/.cookie
+2024-12-28T02:58:04Z HTTP: starting 4 worker threads
+2024-12-28T02:58:04Z Using wallet directory /config/liquidv1/wallets
+2024-12-28T02:58:04Z init message: Verifying wallet(s)…
+2024-12-28T02:58:04Z Using /16 prefix for IP bucketing
+2024-12-28T02:58:04Z init message: Loading P2P addresses…
+2024-12-28T02:58:04Z Loaded 6 addresses from peers.dat  0ms
+2024-12-28T02:58:04Z init message: Loading banlist…
+2024-12-28T02:58:04Z SetNetworkActive: true
+2024-12-28T02:58:04Z Cache configuration:
+2024-12-28T02:58:04Z * Using 2.0 MiB for block index database
+2024-12-28T02:58:04Z * Using 8.0 MiB for chain state database
+2024-12-28T02:58:04Z * Using 440.0 MiB for in-memory UTXO set (plus up to 286.1 MiB of unused mempool space)
+2024-12-28T02:58:04Z init message: Loading block index…
+2024-12-28T02:58:04Z Switching active chainstate to Chainstate [ibd] @ height -1 (null)
+2024-12-28T02:58:04Z Opening LevelDB in /config/liquidv1/blocks/index
+2024-12-28T02:58:04Z Opened LevelDB successfully
+2024-12-28T02:58:04Z Using obfuscation key for /config/liquidv1/blocks/index: 0000000000000000
+2024-12-28T02:58:04Z LoadBlockIndexGuts: loaded 1 total / 1 untrimmed (fully in-memory) headers
+2024-12-28T02:58:04Z LoadBlockIndexDB: last block file = 0
+2024-12-28T02:58:04Z LoadBlockIndexDB: last block file info: CBlockFileInfo(blocks=1, size=732, heights=0...0, time=2011-02-02...2011-02-02)
+2024-12-28T02:58:04Z Checking all blk files are present...
+2024-12-28T02:58:04Z Opening LevelDB in /config/liquidv1/chainstate
+2024-12-28T02:58:04Z Opened LevelDB successfully
+2024-12-28T02:58:04Z Using obfuscation key for /config/liquidv1/chainstate: 5f59626fb7c1dab8
+2024-12-28T02:58:04Z Loaded best chain: hashBestChain=1466275836220db2944ca059a3a10ef6fd2ea684b0688d2c379296888a206003 height=0 date=2011-02-02T23:16:42Z progress=0.000000
+2024-12-28T02:58:04Z init message: Verifying blocks…
+2024-12-28T02:58:04Z  block index              12ms
+2024-12-28T02:58:04Z block tree size = 1
+2024-12-28T02:58:04Z nBestHeight = 0
+2024-12-28T02:58:04Z loadblk thread start
+2024-12-28T02:58:04Z torcontrol thread start
+2024-12-28T02:58:04Z Bound to 127.0.0.1:37041
+2024-12-28T02:58:04Z Imported mempool transactions from disk: 0 succeeded, 0 failed, 0 expired, 0 already there, 0 waiting for initial broadcast
+2024-12-28T02:58:04Z Bound to [::]:7042
+2024-12-28T02:58:04Z Bound to 0.0.0.0:7042
+2024-12-28T02:58:04Z loadblk thread exit
+2024-12-28T02:58:04Z Loaded 0 addresses from "anchors.dat"
+2024-12-28T02:58:04Z 0 block-relay-only anchors will be tried for connections.
+2024-12-28T02:58:04Z init message: Starting network threads…
+2024-12-28T02:58:04Z net thread start
+2024-12-28T02:58:04Z dnsseed thread start
+2024-12-28T02:58:04Z Waiting 11 seconds before querying DNS seeds.
+2024-12-28T02:58:04Z addcon thread start
+2024-12-28T02:58:04Z msghand thread start
+2024-12-28T02:58:04Z opencon thread start
+2024-12-28T02:58:04Z init message: Awaiting mainchain RPC warmup
+2024-12-28T02:58:04Z ERROR: Failure connecting to mainchain daemon RPC: Could not locate mainchain RPC credentials. No authentication cookie could be found, and no mainchainrpcpassword is set in the configuration file (elements.conf)
+2024-12-28T02:58:04Z Error: ERROR: elements is set to verify pegins but cannot get a valid response from the mainchain daemon. Please check debug.log for more information.
+
+If you haven't setup a bitcoind please get the latest stable version from https://bitcoincore.org/en/download/ or if you do not need to validate pegins set in your elements configuration validatepegin=0
+2024-12-28T02:58:04Z tor: Thread interrupt
+2024-12-28T02:58:04Z Shutdown: In progress...
+2024-12-28T02:58:04Z addcon thread exit
+2024-12-28T02:58:04Z dnsseed thread exit
+2024-12-28T02:58:04Z opencon thread exit
+2024-12-28T02:58:04Z torcontrol thread exit
+2024-12-28T02:58:04Z net thread exit
+2024-12-28T02:58:04Z msghand thread exit
+2024-12-28T02:58:05Z DumpAnchors: Flush 0 outbound block-relay-only peer addresses to anchors.dat started
+2024-12-28T02:58:05Z DumpAnchors: Flush 0 outbound block-relay-only peer addresses to anchors.dat completed (0.00s)
+2024-12-28T02:58:05Z scheduler thread exit
+2024-12-28T02:58:05Z Writing 0 unbroadcast transactions to disk.
+2024-12-28T02:58:05Z Dumped mempool: 3e-06s to copy, 0.001186s to dump
+2024-12-28T02:58:05Z Shutdown: done

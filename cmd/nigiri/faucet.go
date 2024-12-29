@@ -5,16 +5,12 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"os/exec"
-	"path/filepath"
 	"strconv"
-	"strings"
 
 	"github.com/urfave/cli/v2"
-	"github.com/vulpemventures/nigiri/internal/config"
-	"github.com/vulpemventures/nigiri/internal/docker"
 )
 
 var faucet = cli.Command{
@@ -38,20 +34,23 @@ func faucetAction(ctx *cli.Context) error {
 	}
 
 	isLiquid := ctx.Bool("liquid")
-	datadir := ctx.String("datadir")
-	composePath := filepath.Join(datadir, config.DefaultCompose)
 
-	var serviceName string = "chopsticks"
+	// Get the correct port from nigiri state
+	var portStr string
+	var err error
 	if isLiquid {
-		serviceName = "chopsticks-liquid"
+		portStr, err = nigiriState.GetString("chopsticks_liquid_port")
+	} else {
+		portStr, err = nigiriState.GetString("chopsticks_bitcoin_port")
 	}
-
-	portSlice, err := docker.GetPortsForService(composePath, serviceName)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to get chopsticks port from state: %w", err)
 	}
-	mappedPorts := strings.Split(portSlice[0], ":")
 
+	// Build the faucet URL
+	url := fmt.Sprintf("http://127.0.0.1:%s/faucet", portStr)
+
+	// Get network from state for LN commands
 	network, err := nigiriState.GetString("network")
 	if err != nil {
 		return err
@@ -98,16 +97,15 @@ func faucetAction(ctx *cli.Context) error {
 		request["asset"] = ctx.Args().Get(2)
 	}
 
-	requestPort := mappedPorts[0]
 	payload, err := json.Marshal(request)
 	if err != nil {
 		return err
 	}
-	res, err := http.Post("http://127.0.0.1:"+requestPort+"/faucet", "application/json", bytes.NewBuffer(payload))
+	res, err := http.Post(url, "application/json", bytes.NewBuffer(payload))
 	if err != nil {
 		return err
 	}
-	data, err := ioutil.ReadAll(res.Body)
+	data, err := io.ReadAll(res.Body)
 	if err != nil {
 		return err
 	}

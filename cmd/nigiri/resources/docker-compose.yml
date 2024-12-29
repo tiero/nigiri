@@ -16,6 +16,11 @@ services:
       - 28333:28333
     volumes:
       - ./volumes/bitcoin:/data/.bitcoin
+    healthcheck:
+      test: ["CMD", "bitcoin-cli", "-regtest", "-rpcuser=admin1", "-rpcpassword=123", "getblockchaininfo"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
   liquid:
     image: ghcr.io/vulpemventures/elements:latest
@@ -32,6 +37,11 @@ services:
     volumes:
       - ./volumes/elements/:/config
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "elements-cli", "-regtest", "-rpcuser=admin1", "-rpcpassword=123", "getblockchaininfo"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
   # Block explorer server
   electrs:
@@ -57,13 +67,19 @@ services:
       - "*"
       - --jsonrpc-import
     depends_on:
-      - bitcoin
+      bitcoin:
+        condition: service_healthy
     ports:
       - 50000:50000
       - 30000:30000
     volumes:
       - ./volumes/bitcoin/:/config
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:30000/blocks/tip/hash"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
   electrs-liquid:
     image: ghcr.io/vulpemventures/electrs-liquid:latest
@@ -90,20 +106,27 @@ services:
       - "*"
       - --jsonrpc-import
     depends_on:
-      - liquid
+      liquid:
+        condition: service_healthy
     ports:
       - 50001:50001
       - 30001:30001
     volumes:
       - ./volumes/elements/:/config
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:30001/blocks/tip/hash"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
   # Block explorer frontend
   esplora:
     image: ghcr.io/vulpemventures/esplora:latest
     container_name: esplora
     depends_on:
-      - chopsticks
+      electrs:
+        condition: service_healthy
     environment:
       API_URL: http://localhost:3000
     ports:
@@ -114,62 +137,22 @@ services:
     image: ghcr.io/vulpemventures/esplora:latest
     container_name: esplora-liquid
     depends_on:
-      - chopsticks-liquid
+      electrs-liquid:
+        condition: service_healthy
     environment:
       API_URL: http://localhost:3001
     ports:
       - 5001:5000
     restart: unless-stopped
 
-  # Chopsticks
-  chopsticks:
-    image: ghcr.io/vulpemventures/nigiri-chopsticks:latest
-    container_name: chopsticks
-    command:
-      - --use-faucet
-      - --use-mining
-      - --use-logger
-      - --rpc-addr
-      - bitcoin:18443
-      - --electrs-addr
-      - electrs:30000
-      - --addr
-      - 0.0.0.0:3000
-    depends_on:
-      - bitcoin
-      - electrs
-    ports:
-      - 3000:3000
-    restart: unless-stopped
-
-  chopsticks-liquid:
-    image: ghcr.io/vulpemventures/nigiri-chopsticks:latest
-    container_name: chopsticks-liquid
-    command:
-      - --use-faucet
-      - --use-mining
-      - --use-logger
-      - --rpc-addr
-      - liquid:18884
-      - --electrs-addr
-      - electrs-liquid:30001
-      - --addr
-      - 0.0.0.0:3000
-      - --chain
-      - liquid
-    depends_on:
-      - liquid
-      - electrs-liquid
-    ports:
-      - 3001:3000
-    restart: unless-stopped
-
+  # LN services
   lnd:
     container_name: lnd
     image: lightninglabs/lnd:v0.18.4-beta.rc2
     user: "${UID:-1000}:${GID:-1000}"
     depends_on:
-      - bitcoin
+      bitcoin:
+        condition: service_healthy
     volumes:
       - ./volumes/lnd:/data/.lnd
     environment:
@@ -186,8 +169,10 @@ services:
     image: lightninglabs/taproot-assets:v0.4.1
     user: "${UID:-1000}:${GID:-1000}"
     depends_on:
-      - bitcoin
-      - lnd
+      bitcoin:
+        condition: service_healthy
+      lnd:
+        condition: service_healthy
     volumes:
       - ./volumes/tapd:/data/.tapd
       - ./volumes/lnd:/data/.lnd
@@ -224,7 +209,8 @@ services:
       - --network=regtest
       - --grpc-port=9836
     depends_on:
-      - bitcoin
+      bitcoin:
+        condition: service_healthy
     ports:
       - 9935:9935 # p2p
       - 9835:9835 # rpc

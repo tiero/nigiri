@@ -20,12 +20,16 @@ func tapAction(ctx *cli.Context) error {
 		return errors.New("nigiri is not running")
 	}
 
-	network, err := nigiriState.GetString("network")
+	if len(ctx.Args().Slice()) != 0 {
+		return errors.New("wrong number of arguments")
+	}
+
+	isCi, err := nigiriState.GetBool("ci")
 	if err != nil {
 		return err
 	}
 
-	isCi, err := nigiriState.GetBool("ci")
+	network, err := nigiriState.GetString("network")
 	if err != nil {
 		return err
 	}

@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -26,7 +25,7 @@ func New(filePath string, initialState map[string]string) *State {
 }
 
 func (s *State) Get() (map[string]string, error) {
-	file, err := ioutil.ReadFile(s.filePath)
+	file, err := os.ReadFile(s.filePath)
 	if err != nil {
 		if !os.IsNotExist(err) {
 			return nil, err
@@ -67,7 +66,7 @@ func (s *State) Set(data map[string]string) error {
 	if err != nil {
 		return err
 	}
-	err = ioutil.WriteFile(s.filePath, jsonString, 0755)
+	err = os.WriteFile(s.filePath, jsonString, 0755)
 	if err != nil {
 		return fmt.Errorf("writing to file: %w", err)
 	}

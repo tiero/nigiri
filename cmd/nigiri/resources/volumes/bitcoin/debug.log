@@ -1,0 +1,108 @@
+
+
+
+
+
+2024-12-28T02:57:35Z Bitcoin Core version v28.0.0 (release build)
+2024-12-28T02:57:35Z Script verification uses 9 additional threads
+2024-12-28T02:57:35Z Using the 'arm_shani(1way,2way)' SHA256 implementation
+2024-12-28T02:57:35Z Default data directory /data/.bitcoin
+2024-12-28T02:57:35Z Using data directory /data/.bitcoin
+2024-12-28T02:57:35Z Config file: /data/.bitcoin/bitcoin.conf (not found, skipping)
+2024-12-28T02:57:35Z Using at most 125 automatic connections (1048576 file descriptors available)
+2024-12-28T02:57:35Z scheduler thread start
+2024-12-28T02:57:35Z Binding RPC on address ::1 port 8332
+2024-12-28T02:57:35Z [libevent:warning] getaddrinfo: address family for nodename not supported
+2024-12-28T02:57:35Z Binding RPC on address ::1 port 8332 failed.
+2024-12-28T02:57:35Z Binding RPC on address 127.0.0.1 port 8332
+2024-12-28T02:57:35Z Using random cookie authentication.
+2024-12-28T02:57:35Z Generated RPC authentication cookie /data/.bitcoin/.cookie
+2024-12-28T02:57:35Z Permissions used for cookie: rw-------
+2024-12-28T02:57:35Z Starting HTTP server with 4 worker threads
+2024-12-28T02:57:35Z Using wallet directory /data/.bitcoin
+2024-12-28T02:57:35Z init message: Verifying wallet(s)…
+2024-12-28T02:57:35Z Using /16 prefix for IP bucketing
+2024-12-28T02:57:35Z init message: Loading P2P addresses…
+2024-12-28T02:57:35Z Creating peers.dat because the file was not found ("/data/.bitcoin/peers.dat")
+2024-12-28T02:57:35Z init message: Loading banlist…
+2024-12-28T02:57:35Z Recreating the banlist database
+2024-12-28T02:57:35Z SetNetworkActive: true
+2024-12-28T02:57:35Z /data/.bitcoin/fee_estimates.dat is not found. Continue anyway.
+2024-12-28T02:57:35Z Script verification uses 9 additional threads
+2024-12-28T02:57:35Z Cache configuration:
+2024-12-28T02:57:35Z * Using 2.0 MiB for block index database
+2024-12-28T02:57:35Z * Using 8.0 MiB for chain state database
+2024-12-28T02:57:35Z * Using 440.0 MiB for in-memory UTXO set (plus up to 286.1 MiB of unused mempool space)
+2024-12-28T02:57:35Z Using obfuscation key for blocksdir *.dat files (/data/.bitcoin/blocks): 'fe6cb6ac60dab0d4'
+2024-12-28T02:57:35Z Using 16 MiB out of 16 MiB requested for signature cache, able to store 524288 elements
+2024-12-28T02:57:35Z Using 16 MiB out of 16 MiB requested for script execution cache, able to store 524288 elements
+2024-12-28T02:57:35Z init message: Loading block index…
+2024-12-28T02:57:35Z Assuming ancestors of block 000000000000000000011c5890365bdbe5d25b97ce0057589acaef4f1a57263f have valid signatures.
+2024-12-28T02:57:35Z Setting nMinimumChainWork=000000000000000000000000000000000000000088e186b70e0862c193ec44d6
+2024-12-28T02:57:35Z Opening LevelDB in /data/.bitcoin/blocks/index
+2024-12-28T02:57:35Z Opened LevelDB successfully
+2024-12-28T02:57:35Z Using obfuscation key for /data/.bitcoin/blocks/index: 0000000000000000
+2024-12-28T02:57:35Z LoadBlockIndexDB: last block file = 0
+2024-12-28T02:57:35Z LoadBlockIndexDB: last block file info: CBlockFileInfo(blocks=0, size=0, heights=0...0, time=1970-01-01...1970-01-01)
+2024-12-28T02:57:35Z Checking all blk files are present...
+2024-12-28T02:57:35Z Initializing chainstate Chainstate [ibd] @ height -1 (null)
+2024-12-28T02:57:35Z Opening LevelDB in /data/.bitcoin/chainstate
+2024-12-28T02:57:35Z Opened LevelDB successfully
+2024-12-28T02:57:35Z Wrote new obfuscate key for /data/.bitcoin/chainstate: 4ebbacc944dcff59
+2024-12-28T02:57:35Z Using obfuscation key for /data/.bitcoin/chainstate: 4ebbacc944dcff59
+2024-12-28T02:57:35Z Opening LevelDB in /data/.bitcoin/chainstate
+2024-12-28T02:57:35Z Opened LevelDB successfully
+2024-12-28T02:57:35Z Using obfuscation key for /data/.bitcoin/chainstate: 4ebbacc944dcff59
+2024-12-28T02:57:35Z [Chainstate [ibd] @ height -1 (null)] resized coinsdb cache to 8.0 MiB
+2024-12-28T02:57:35Z [Chainstate [ibd] @ height -1 (null)] resized coinstip cache to 440.0 MiB
+2024-12-28T02:57:35Z init message: Verifying blocks…
+2024-12-28T02:57:35Z  block index              34ms
+2024-12-28T02:57:35Z Setting NODE_NETWORK on non-prune mode
+2024-12-28T02:57:35Z [warning] Disk space for "/data/.bitcoin/blocks" may not accommodate the block files. Approximately 620 GB of data will be stored in this directory.
+2024-12-28T02:57:35Z initload thread start
+2024-12-28T02:57:35Z UpdateTip: new best=000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f height=0 version=0x00000001 log2_work=32.000022 tx=1 date='2009-01-03T18:15:05Z' progress=0.000000 cache=0.3MiB(0txo)
+2024-12-28T02:57:35Z block tree size = 1
+2024-12-28T02:57:35Z nBestHeight = 0
+2024-12-28T02:57:35Z Failed to open mempool file. Continuing anyway.
+2024-12-28T02:57:35Z initload thread exit
+2024-12-28T02:57:35Z torcontrol thread start
+2024-12-28T02:57:35Z Bound to 127.0.0.1:8334
+2024-12-28T02:57:35Z Bound to [::]:8333
+2024-12-28T02:57:35Z Bound to 0.0.0.0:8333
+2024-12-28T02:57:35Z 0 block-relay-only anchors will be tried for connections.
+2024-12-28T02:57:35Z init message: Starting network threads…
+2024-12-28T02:57:35Z net thread start
+2024-12-28T02:57:35Z init message: Done loading
+2024-12-28T02:57:35Z opencon thread start
+2024-12-28T02:57:35Z dnsseed thread start
+2024-12-28T02:57:35Z Loading addresses from DNS seed dnsseed.bluematt.me.
+2024-12-28T02:57:35Z msghand thread start
+2024-12-28T02:57:35Z addcon thread start
+2024-12-28T02:57:35Z Loading addresses from DNS seed seed.bitcoin.wiz.biz.
+2024-12-28T02:57:35Z Loading addresses from DNS seed seed.btc.petertodd.net.
+2024-12-28T02:57:36Z Loading addresses from DNS seed seed.bitcoin.jonasschnelli.ch.
+2024-12-28T02:57:52Z Loading addresses from DNS seed seed.mainnet.achownodes.xyz.
+2024-12-28T02:58:08Z Loading addresses from DNS seed seed.bitcoin.sprovoost.nl.
+2024-12-28T02:58:08Z Loading addresses from DNS seed dnsseed.bitcoin.dashjr-list-of-p2p-nodes.us.
+2024-12-28T02:58:08Z Loading addresses from DNS seed dnsseed.emzy.de.
+2024-12-28T02:58:09Z Loading addresses from DNS seed seed.bitcoin.sipa.be.
+2024-12-28T02:58:09Z 160 addresses found from DNS seeds
+2024-12-28T02:58:09Z dnsseed thread exit
+2024-12-28T02:58:15Z New outbound-full-relay v1 peer connected: version: 70016, blocks=876690, peer=0
+2024-12-28T02:58:21Z Pre-synchronizing blockheaders, height: 2000 (~0.24%)
+2024-12-28T02:58:25Z Pre-synchronizing blockheaders, height: 4000 (~0.48%)
+2024-12-28T02:58:27Z tor: Thread interrupt
+2024-12-28T02:58:27Z Shutdown: In progress...
+2024-12-28T02:58:27Z addcon thread exit
+2024-12-28T02:58:27Z torcontrol thread exit
+2024-12-28T02:58:27Z net thread exit
+2024-12-28T02:58:27Z msghand thread exit
+2024-12-28T02:58:30Z opencon thread exit
+2024-12-28T02:58:30Z DumpAnchors: Flush 0 outbound block-relay-only peer addresses to anchors.dat started
+2024-12-28T02:58:30Z DumpAnchors: Flush 0 outbound block-relay-only peer addresses to anchors.dat completed (0.00s)
+2024-12-28T02:58:30Z scheduler thread exit
+2024-12-28T02:58:30Z Writing 0 mempool transactions to file...
+2024-12-28T02:58:30Z Writing 0 unbroadcast transactions to file.
+2024-12-28T02:58:30Z Dumped mempool: 0.000s to copy, 0.004s to dump, 27 bytes dumped to file
+2024-12-28T02:58:30Z Flushed fee estimates to fee_estimates.dat.
+2024-12-28T02:58:30Z Shutdown: done

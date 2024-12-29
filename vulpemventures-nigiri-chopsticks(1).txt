@@ -1,0 +1,2256 @@
+Directory structure:
+└── vulpemventures-nigiri-chopsticks/
+    ├── main.go
+    ├── .github/
+    │   └── workflows/
+    │       ├── docker-publish.yml
+    │       └── test.yml
+    ├── faucet/
+    │   └── main.go
+    ├── go.sum
+    ├── Makefile
+    ├── helpers/
+    │   ├── main.go
+    │   ├── rescan.go
+    │   ├── registry.go
+    │   └── wallet.go
+    ├── config/
+    │   ├── main.go
+    │   └── main_test.go
+    ├── Dockerfile
+    ├── go.mod
+    ├── LICENSE
+    ├── README.md
+    └── router/
+        ├── address_handler.go
+        ├── main.go
+        ├── broadcast_handler.go
+        ├── registry_handler.go
+        ├── electrs_handler_test.go
+        ├── faucet_handler.go
+        ├── faucet_handler_test.go
+        ├── electrs_handler.go
+        ├── registry_handler_test.go
+        ├── broadcast_handler_test.go
+        ├── main_test.go
+        └── middleware/
+            ├── logger.go
+            └── response_writer.go
+
+================================================
+File: /README.md
+================================================
+# Nigiri chopsticks
+
+This is an API passthrough that simply proxies requests to the underlying services.
+It expects an electrum REST server and an optional RPC server for faucet and custom broadcasting services.
+
+## Usage
+
+Clone the repo:
+
+```bash
+$ git clone git@github.com:vulpmeventures/nigiri-chopsticks.git
+```
+
+Run tests:
+
+```
+$ bash scripts/test local
+```
+
+To run tests locally you must have a running Nigiri instance.
+
+Build for Linux x64:
+
+```bash
+nigiri-chopsticks $ bash scripts/build linux amd64
+```
+
+Build for Mac:
+
+```bash
+nigiri-chopsticks $ bash scripts/build darwin amd64
+```
+
+Run:
+
+```bash
+nigiri-chopsticks $ ./build/nigiri-chopsticks-darwin-amd64
+```
+
+## Routes and Customization
+
+The web server starts at default address `localhost:3000` with the following routes:
+
+- `/faucet` if faucet is enabled, to send funds to an address
+  - example for Bitcoin:
+  ```bash
+  $ curl -X POST --data '{"address": "2MsnWskyHaHvcZUHA4gnR3G95EnUmZQjzM8", "amount": 0.02}' http://localhost:3000/faucet
+  ```
+  - example for Liquid
+  ```bash
+  $ curl -X POST --data '{"address": "2MsnWskyHaHvcZUHA4gnR3G95EnUmZQjzM8", "asset": "2dcf5a8834645654911964ec3602426fd3b9b4017554d3f9c19403e7fc1411d3", "amount": 0.02}' http://localhost:3000/faucet
+  ```
+- `/mint` (only for Liquid chain) if faucet is enabled, to issue an asset and sent all issuance amount to an address
+  - example:
+  ```bash
+  $ curl -X POST --data '{"address": "ert1q90dz89u8eudeswzynl3p2jke564ejc2cnfcwuq", "quantity": 1000, "name": "TokenName", "ticker":"TKN"}' http://localhost:3000/mint
+  ```
+- `/registry` (only for Liquid chain) if faucet is enabled, to get extra info about one or more assets like `name` and `ticker`
+  ```bash
+  $ curl -X POST --data '{"assets": ["2dcf5a8834645654911964ec3602426fd3b9b4017554d3f9c19403e7fc1411d3"]}' http://localhost:3000/registry
+  # [{"asset":"2dcf5a8834645654911964ec3602426fd3b9b4017554d3f9c19403e7fc1411d3","contract":{"name":"test","ticker":"TST"},"issuance_txin":{"txid":"a0891447adb288e5a49fa10ede7016788a1b3a175cfb423eb133e45f6cefca84","vin":0},"name":"test","ticker":"TST"
+  ```
+- all [esplora](https://github.com/blockstream/esplora/blob/master/API.md) HTTP API endpoints
+
+**Note:**  
+If mining is enabled, the esplora broadcast endpoint is wrapped so that a block is mined just after the transaction is published to get it confirmed; this is useful when running in regtest network.  
+All requests to chopsticks are (optionally) logged using a logger inspired by [negroni](https://github.com/urfave/negroni) package.
+
+To customize server urls and ports use flags when running the binary:
+
+- `--chain` one between `bitcoin` and `liquid`
+- `--addr` server listening address (default `localhost:3000`)
+- `--rpc-addr` btc RPC server listening address (default `localhost:19001`)
+- `--btc-cookie` btc RPC server user and password (default `admin1:123`)
+- `--liquid-addr` liquid RPC server listening address (default `localhost:18884`)
+- `--electrs-addr` electrs HTTP server listening address (default `localhost:3002`)
+- `--use-tls` specify using either `http` or `https` (default `true`)
+- `--use-faucet` to have a /faucet endpoint available for sending funds
+- `--use-mining` to have the esplora /broadcast endpoint wrapped so that a block is mined after the transaction
+  is published
+- `--use-logger` to log every request/response
+- `--registry-path` to set the path for the asset registry db (default to current directory - Liquid only)
+
+
+================================================
+File: /main.go
+================================================
+package main
+
+import (
+	"crypto/tls"
+	"net/http"
+	"time"
+
+	log "github.com/sirupsen/logrus"
+	cfg "github.com/vulpemventures/nigiri-chopsticks/config"
+	"github.com/vulpemventures/nigiri-chopsticks/router"
+	"golang.org/x/crypto/acme/autocert"
+)
+
+func makeHTTPServer(handler http.Handler, addr string) *http.Server {
+	return &http.Server{
+		ReadTimeout:  5 * time.Second,
+		WriteTimeout: 5 * time.Second,
+		IdleTimeout:  120 * time.Second,
+		Addr:         addr,
+		Handler:      handler,
+	}
+}
+
+func main() {
+	config, err := cfg.NewConfigFromFlags()
+	if err != nil {
+		log.WithError(err).Fatal("Failed to parse flags")
+	}
+
+	log.WithFields(log.Fields{
+		"tls_enabled":    config.IsTLSEnabled(),
+		"faucet_enabled": config.IsFaucetEnabled(),
+		"mining_enabled": config.IsMiningEnabled(),
+		"logger_enabled": config.IsLoggerEnabled(),
+		"listen_url":     config.ListenURL(),
+		"electrs_url":    config.ElectrsURL(),
+		"rpc_server_url": config.RPCServerURL(),
+		"chain":          config.Chain(),
+	}).Info("Starting server with configuration:")
+
+	r := router.NewRouter(config)
+	s := makeHTTPServer(r, config.ListenURL())
+
+	if !config.IsTLSEnabled() {
+		if err = s.ListenAndServe(); err != nil {
+			log.WithError(err).Fatal("HTTP server exited with error")
+		}
+	} else {
+		dataDir := "."
+		m := &autocert.Manager{
+			Prompt: autocert.AcceptTOS,
+			Cache:  autocert.DirCache(dataDir),
+		}
+
+		s.TLSConfig = &tls.Config{GetCertificate: m.GetCertificate}
+
+		if err = s.ListenAndServeTLS("", ""); err != nil {
+			log.WithError(err).Fatal("HTTPS server exited with error")
+		}
+	}
+}
+
+
+================================================
+File: /.github/workflows/docker-publish.yml
+================================================
+name: Docker
+
+on:
+  push:
+    tags:
+      - "*"
+
+env:
+  # TODO: Change variable to your image's name.
+  IMAGE_NAME: nigiri-chopsticks
+
+jobs:
+  # Push image to GitHub Packages.
+  # See also https://docs.docker.com/docker-hub/builds/
+  push:
+    runs-on: ubuntu-latest
+    env:
+      DOCKER_CLI_EXPERIMENTAL: "enabled"
+
+    steps:
+      - uses: actions/checkout@v2
+
+      # get current  tag
+      - name: tag
+        id: next_tag
+        run: echo ::set-output name=tag::${GITHUB_REF#refs/tags/}
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v1
+      
+      - name: Set up Docker Buildx
+        id: buildx
+        uses: docker/setup-buildx-action@v1
+        with:
+          install: true
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v1
+        with:
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build image
+        run:  >-
+          docker buildx build --push 
+          --file ./Dockerfile 
+          --tag ghcr.io/vulpemventures/$IMAGE_NAME:latest 
+          --tag ghcr.io/vulpemventures/$IMAGE_NAME:${{ steps.next_tag.outputs.tag }} 
+          --platform linux/arm64,linux/amd64 .
+
+================================================
+File: /.github/workflows/test.yml
+================================================
+name: Go
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+
+jobs:
+  integration:
+    name: Unit Tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Set up Go 1.x
+        uses: actions/setup-go@v2
+        id: go
+
+      - name: Check out code into the Go module directory
+        uses: actions/checkout@v2
+
+      - run: sleep 5
+
+      - name: Run Nigiri
+        uses: vulpemventures/nigiri-github-action@v1
+
+      - name: Get dependencies
+        run: go get -v -t -d ./...
+
+      - name: Test
+        run: |
+          make fmt
+          make testci
+
+
+================================================
+File: /faucet/main.go
+================================================
+package faucet
+
+import (
+	"github.com/vulpemventures/nigiri-chopsticks/helpers"
+)
+
+type Faucet struct {
+	URL       string
+	rpcClient *helpers.RpcClient
+}
+
+// NewFaucet initialize a liquid faucet and returns it as interface
+func NewFaucet(url string, client *helpers.RpcClient) *Faucet {
+	return &Faucet{url, client}
+}
+
+// SendBitcoinTransaction calls the sendtoaddress method of the bitcoin node to the given address with the fractional amount
+func (f *Faucet) SendBitcoinTransaction(address string, amount float64) (int, string, error) {
+	status, resp, err := helpers.HandleRPCRequest(f.rpcClient, "sendtoaddress", []interface{}{address, amount})
+	if err != nil {
+		return status, "", err
+	}
+
+	return status, resp.(string), nil
+}
+
+// SendLiquidTransaction calls the sendtoaddress method of the elements node to the given address with the fractional amount of the given asset hash.
+// If asset hash is empty will send Liquid Bitcoin
+func (f *Faucet) SendLiquidTransaction(address string, amount float64, asset string) (int, string, error) {
+	status, resp, err := helpers.HandleRPCRequest(f.rpcClient, "sendtoaddress", []interface{}{address, amount, "", "", false, false, 1, "UNSET", false, asset})
+	if err != nil {
+		return status, "", err
+	}
+
+	return status, resp.(string), nil
+}
+
+// Fund  "mature" the balance mining block if not already mined
+//liquid starts with initialfreecoins = 21,000,000 LBTC
+func (f *Faucet) Fund(numBlocks int) (int, []string, error) {
+	status, resp, err := helpers.HandleRPCRequest(f.rpcClient, "getblockcount", nil)
+	if err != nil {
+		return status, nil, err
+	}
+
+	if blockCount := resp.(float64); blockCount <= 0 {
+		return f.Mine(numBlocks)
+	}
+
+	return 200, nil, nil
+}
+
+// Mine will generated block versus an address of the wallet
+func (f *Faucet) Mine(blocks int) (int, []string, error) {
+	status, resp, err := helpers.HandleRPCRequest(f.rpcClient, "getnewaddress", nil)
+	if err != nil {
+		return status, nil, err
+	}
+	address := resp.(string)
+
+	status, resp, err = helpers.HandleRPCRequest(f.rpcClient, "generatetoaddress", []interface{}{blocks, address})
+	if err != nil {
+		return status, nil, err
+	}
+
+	blockHashes := []string{}
+	for _, b := range resp.([]interface{}) {
+		blockHashes = append(blockHashes, b.(string))
+	}
+
+	return status, blockHashes, nil
+}
+
+// Mint issue a new Liquid asset
+func (f *Faucet) Mint(address string, quantity float64) (int, map[string]interface{}, error) {
+	status, resp, err := helpers.HandleRPCRequest(f.rpcClient, "issueasset", []interface{}{quantity, 0, false})
+	if err != nil {
+		return status, nil, err
+	}
+	decodedResp := resp.(map[string]interface{})
+	asset := decodedResp["asset"].(string)
+	issuanceInput := map[string]interface{}{
+		"txid": decodedResp["txid"].(string),
+		"vin":  decodedResp["vin"].(float64),
+	}
+
+	status, tx, err := f.SendLiquidTransaction(address, quantity, asset)
+	if err != nil {
+		return status, nil, err
+	}
+
+	res := make(map[string]interface{})
+	res["asset"] = asset
+	res["txId"] = tx
+	res["issuance_txin"] = issuanceInput
+
+	return status, res, nil
+}
+
+
+================================================
+File: /go.sum
+================================================
+github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=
+github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
+github.com/google/go-cmp v0.6.0/go.mod h1:17dUlkBOakJ0+DkrSSNjCkIjxS6bF9zb3elmeNGIjoY=
+github.com/gorilla/mux v1.7.0 h1:tOSd0UKHQd6urX6ApfOn4XdBMY6Sh1MfxV3kmaazO+U=
+github.com/gorilla/mux v1.7.0/go.mod h1:1lud6UwP+6orDFRuTfBEV8e9/aOM/c4fVVCaMa2zaAs=
+github.com/jcelliott/lumber v0.0.0-20160324203708-dd349441af25 h1:EFT6MH3igZK/dIVqgGbTqWVvkZ7wJ5iGN03SVtvvdd8=
+github.com/jcelliott/lumber v0.0.0-20160324203708-dd349441af25/go.mod h1:sWkGw/wsaHtRsT9zGQ/WyJCotGWG/Anow/9hsAcBWRw=
+github.com/konsorten/go-windows-terminal-sequences v1.0.1/go.mod h1:T0+1ngSBFLxvqU3pZ+m/2kptfBszLMUkC4ZK/EgS/cQ=
+github.com/konsorten/go-windows-terminal-sequences v1.0.2 h1:DB17ag19krx9CFsz4o3enTrPXyIXCl+2iCXH/aMAp9s=
+github.com/konsorten/go-windows-terminal-sequences v1.0.2/go.mod h1:T0+1ngSBFLxvqU3pZ+m/2kptfBszLMUkC4ZK/EgS/cQ=
+github.com/pmezard/go-difflib v1.0.0 h1:4DBwDE0NGyQoBHbLQYPwSUPoCMWR5BEzIk/f1lZbAQM=
+github.com/pmezard/go-difflib v1.0.0/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZNVY4sRDYZ/4=
+github.com/sdomino/scribble v0.0.0-20191024200645-4116320640ba h1:8QAc9wFAf2b/9cAXskm0wBylObZ0bTpRcaP7ThjLPVQ=
+github.com/sdomino/scribble v0.0.0-20191024200645-4116320640ba/go.mod h1:W6zxGUBCXRR5QugSd/nFcFVmwoGnvpjiNY/JwT03Wew=
+github.com/sirupsen/logrus v1.4.0 h1:yKenngtzGh+cUSSh6GWbxW2abRqhYUSR/t/6+2QqNvE=
+github.com/sirupsen/logrus v1.4.0/go.mod h1:LxeOpSwHxABJmUn/MG1IvRgCAasNZTLOkJPxbbu5VWo=
+github.com/stretchr/objx v0.1.1/go.mod h1:HFkY916IF+rwdDfMAkV7OtwuqBVzrE8GR6GFx+wExME=
+github.com/stretchr/testify v1.2.2 h1:bSDNvY7ZPG5RlJ8otE/7V6gMiyenm9RtJ7IUVIAoJ1w=
+github.com/stretchr/testify v1.2.2/go.mod h1:a8OnRcib4nhh0OaRAV+Yts87kKdq0PP7pXfy6kDkUVs=
+github.com/yuin/goldmark v1.4.13/go.mod h1:6yULJ656Px+3vBD8DxQVa3kxgyrAnzto9xy5taEt/CY=
+golang.org/x/crypto v0.0.0-20180904163835-0709b304e793/go.mod h1:6SG95UA2DQfeDnfUPMdvaQW0Q7yPrPDi9nlGo2tz2b4=
+golang.org/x/crypto v0.0.0-20190308221718-c2843e01d9a2/go.mod h1:djNgcEr1/C05ACkg1iLfiJU5Ep61QUkGW8qpdssI0+w=
+golang.org/x/crypto v0.0.0-20210921155107-089bfa567519/go.mod h1:GvvjBRRGRdwPK5ydBHafDWAxML/pGHZbMvKqRZ5+Abc=
+golang.org/x/crypto v0.13.0/go.mod h1:y6Z2r+Rw4iayiXXAIxJIDAJ1zMW4yaTpebo8fPOliYc=
+golang.org/x/crypto v0.19.0/go.mod h1:Iy9bg/ha4yyC70EfRS8jz+B6ybOBKMaSxLj6P6oBDfU=
+golang.org/x/crypto v0.23.0/go.mod h1:CKFgDieR+mRhux2Lsu27y0fO304Db0wZe70UKqHu0v8=
+golang.org/x/crypto v0.31.0 h1:ihbySMvVjLAeSH1IbfcRTkD/iNscyz8rGzjF/E5hV6U=
+golang.org/x/crypto v0.31.0/go.mod h1:kDsLvtWBEx7MV9tJOj9bnXsPbxwJQ6csT/x4KIN4Ssk=
+golang.org/x/mod v0.6.0-dev.0.20220419223038-86c51ed26bb4/go.mod h1:jJ57K6gSWd91VN4djpZkiMVwK6gcyfeH4XE8wZrZaV4=
+golang.org/x/mod v0.8.0/go.mod h1:iBbtSCu2XBx23ZKBPSOrRkjjQPZFPuis4dIYUhu/chs=
+golang.org/x/mod v0.12.0/go.mod h1:iBbtSCu2XBx23ZKBPSOrRkjjQPZFPuis4dIYUhu/chs=
+golang.org/x/mod v0.15.0/go.mod h1:hTbmBsO62+eylJbnUtE2MGJUyE7QWk4xUqPFrRgJ+7c=
+golang.org/x/mod v0.17.0/go.mod h1:hTbmBsO62+eylJbnUtE2MGJUyE7QWk4xUqPFrRgJ+7c=
+golang.org/x/net v0.0.0-20190620200207-3b0461eec859/go.mod h1:z5CRVTTTmAJ677TzLLGU+0bjPO0LkuOLi4/5GtJWs/s=
+golang.org/x/net v0.0.0-20210226172049-e18ecbb05110/go.mod h1:m0MpNAwzfU5UDzcl9v0D8zg8gWTRqZa9RBIspLL5mdg=
+golang.org/x/net v0.0.0-20220722155237-a158d28d115b/go.mod h1:XRhObCWvk6IyKnWLug+ECip1KBveYUHfp+8e9klMJ9c=
+golang.org/x/net v0.6.0/go.mod h1:2Tu9+aMcznHK/AK1HMvgo6xiTLG5rD5rZLDS+rp2Bjs=
+golang.org/x/net v0.10.0/go.mod h1:0qNGK6F8kojg2nk9dLZ2mShWaEBan6FAoqfSigmmuDg=
+golang.org/x/net v0.15.0/go.mod h1:idbUs1IY1+zTqbi8yxTbhexhEEk5ur9LInksu6HrEpk=
+golang.org/x/net v0.21.0/go.mod h1:bIjVDfnllIU7BJ2DNgfnXvpSvtn8VRwhlsaeUTyUS44=
+golang.org/x/net v0.25.0 h1:d/OCCoBEUq33pjydKrGQhw7IlUPI2Oylr+8qLx49kac=
+golang.org/x/net v0.25.0/go.mod h1:JkAGAh7GEvH74S6FOH42FLoXpXbE/aqXSrIQjXgsiwM=
+golang.org/x/sync v0.0.0-20190423024810-112230192c58/go.mod h1:RxMgew5VJxzue5/jJTE5uejpjVlOe/izrB70Jof72aM=
+golang.org/x/sync v0.0.0-20220722155255-886fb9371eb4/go.mod h1:RxMgew5VJxzue5/jJTE5uejpjVlOe/izrB70Jof72aM=
+golang.org/x/sync v0.1.0/go.mod h1:RxMgew5VJxzue5/jJTE5uejpjVlOe/izrB70Jof72aM=
+golang.org/x/sync v0.3.0/go.mod h1:FU7BRWz2tNW+3quACPkgCx/L+uEAv1htQ0V83Z9Rj+Y=
+golang.org/x/sync v0.6.0/go.mod h1:Czt+wKu1gCyEFDUtn0jG5QVvpJ6rzVqr5aXyt9drQfk=
+golang.org/x/sync v0.7.0/go.mod h1:Czt+wKu1gCyEFDUtn0jG5QVvpJ6rzVqr5aXyt9drQfk=
+golang.org/x/sync v0.10.0/go.mod h1:Czt+wKu1gCyEFDUtn0jG5QVvpJ6rzVqr5aXyt9drQfk=
+golang.org/x/sys v0.0.0-20180905080454-ebe1bf3edb33/go.mod h1:STP8DvDyc/dI5b8T5hshtkjS+E42TnysNCUPdjciGhY=
+golang.org/x/sys v0.0.0-20190215142949-d0b11bdaac8a/go.mod h1:STP8DvDyc/dI5b8T5hshtkjS+E42TnysNCUPdjciGhY=
+golang.org/x/sys v0.0.0-20201119102817-f84b799fce68/go.mod h1:h1NjWce9XRLGQEsW7wpKNCjG9DtNlClVuFLEZdDNbEs=
+golang.org/x/sys v0.0.0-20210615035016-665e8c7367d1/go.mod h1:oPkhp1MJrh7nUepCBck5+mAzfO9JrbApNNgaTdGDITg=
+golang.org/x/sys v0.0.0-20220520151302-bc2c85ada10a/go.mod h1:oPkhp1MJrh7nUepCBck5+mAzfO9JrbApNNgaTdGDITg=
+golang.org/x/sys v0.0.0-20220722155257-8c9f86f7a55f/go.mod h1:oPkhp1MJrh7nUepCBck5+mAzfO9JrbApNNgaTdGDITg=
+golang.org/x/sys v0.5.0/go.mod h1:oPkhp1MJrh7nUepCBck5+mAzfO9JrbApNNgaTdGDITg=
+golang.org/x/sys v0.8.0/go.mod h1:oPkhp1MJrh7nUepCBck5+mAzfO9JrbApNNgaTdGDITg=
+golang.org/x/sys v0.12.0/go.mod h1:oPkhp1MJrh7nUepCBck5+mAzfO9JrbApNNgaTdGDITg=
+golang.org/x/sys v0.17.0/go.mod h1:/VUhepiaJMQUp4+oa/7Zr1D23ma6VTLIYjOOTFZPUcA=
+golang.org/x/sys v0.20.0/go.mod h1:/VUhepiaJMQUp4+oa/7Zr1D23ma6VTLIYjOOTFZPUcA=
+golang.org/x/sys v0.28.0 h1:Fksou7UEQUWlKvIdsqzJmUmCX3cZuD2+P3XyyzwMhlA=
+golang.org/x/sys v0.28.0/go.mod h1:/VUhepiaJMQUp4+oa/7Zr1D23ma6VTLIYjOOTFZPUcA=
+golang.org/x/telemetry v0.0.0-20240228155512-f48c80bd79b2/go.mod h1:TeRTkGYfJXctD9OcfyVLyj2J3IxLnKwHJR8f4D8a3YE=
+golang.org/x/term v0.0.0-20201126162022-7de9c90e9dd1/go.mod h1:bj7SfCRtBDWHUb9snDiAeCFNEtKQo2Wmx5Cou7ajbmo=
+golang.org/x/term v0.0.0-20210927222741-03fcf44c2211/go.mod h1:jbD1KX2456YbFQfuXm/mYQcufACuNUgVhRMnK/tPxf8=
+golang.org/x/term v0.5.0/go.mod h1:jMB1sMXY+tzblOD4FWmEbocvup2/aLOaQEp7JmGp78k=
+golang.org/x/term v0.8.0/go.mod h1:xPskH00ivmX89bAKVGSKKtLOWNx2+17Eiy94tnKShWo=
+golang.org/x/term v0.12.0/go.mod h1:owVbMEjm3cBLCHdkQu9b1opXd4ETQWc3BhuQGKgXgvU=
+golang.org/x/term v0.17.0/go.mod h1:lLRBjIVuehSbZlaOtGMbcMncT+aqLLLmKrsjNrUguwk=
+golang.org/x/term v0.20.0/go.mod h1:8UkIAJTvZgivsXaD6/pH6U9ecQzZ45awqEOzuCvwpFY=
+golang.org/x/term v0.27.0 h1:WP60Sv1nlK1T6SupCHbXzSaN0b9wUmsPoRS9b61A23Q=
+golang.org/x/term v0.27.0/go.mod h1:iMsnZpn0cago0GOrHO2+Y7u7JPn5AylBrcoWkElMTSM=
+golang.org/x/text v0.3.0/go.mod h1:NqM8EUOU14njkJ3fqMW+pc6Ldnwhi/IjpwHt7yyuwOQ=
+golang.org/x/text v0.3.3/go.mod h1:5Zoc/QRtKVWzQhOtBMvqHzDpF6irO9z98xDceosuGiQ=
+golang.org/x/text v0.3.7/go.mod h1:u+2+/6zg+i71rQMx5EYifcz6MCKuco9NR6JIITiCfzQ=
+golang.org/x/text v0.7.0/go.mod h1:mrYo+phRRbMaCq/xk9113O4dZlRixOauAjOtrjsXDZ8=
+golang.org/x/text v0.9.0/go.mod h1:e1OnstbJyHTd6l/uOt8jFFHp6TRDWZR/bV3emEE/zU8=
+golang.org/x/text v0.13.0/go.mod h1:TvPlkZtksWOMsz7fbANvkp4WM8x/WCo/om8BMLbz+aE=
+golang.org/x/text v0.14.0/go.mod h1:18ZOQIKpY8NJVqYksKHtTdi31H5itFRjB5/qKTNYzSU=
+golang.org/x/text v0.15.0/go.mod h1:18ZOQIKpY8NJVqYksKHtTdi31H5itFRjB5/qKTNYzSU=
+golang.org/x/text v0.21.0 h1:zyQAAkrwaneQ066sspRyJaG9VNi/YJ1NfzcGB3hZ/qo=
+golang.org/x/text v0.21.0/go.mod h1:4IBbMaMmOPCJ8SecivzSH54+73PCFmPWxNTLm+vZkEQ=
+golang.org/x/tools v0.0.0-20180917221912-90fa682c2a6e/go.mod h1:n7NCudcB/nEzxVGmLbDWY5pfWTLqBcC2KZ6jyYvM4mQ=
+golang.org/x/tools v0.0.0-20191119224855-298f0cb1881e/go.mod h1:b+2E5dAYhXwXZwtnZ6UAqBI28+e2cm9otk0dWdXHAEo=
+golang.org/x/tools v0.1.12/go.mod h1:hNGJHUnrk76NpqgfD5Aqm5Crs+Hm0VOH/i9J2+nxYbc=
+golang.org/x/tools v0.6.0/go.mod h1:Xwgl3UAJ/d3gWutnCtw505GrjyAbvKui8lOU390QaIU=
+golang.org/x/tools v0.13.0/go.mod h1:HvlwmtVNQAhOuCjW7xxvovg8wbNq7LwfXh/k7wXUl58=
+golang.org/x/tools v0.21.1-0.20240508182429-e35e4ccd0d2d/go.mod h1:aiJjzUbINMkxbQROHiO6hDPo2LHcIPhhQsa9DLh0yGk=
+golang.org/x/xerrors v0.0.0-20190717185122-a985d3407aa7/go.mod h1:I/5z698sn9Ka8TeJc9MKroUUfqBBauWjQqLJ2OPfmY0=
+
+
+================================================
+File: /Makefile
+================================================
+.PHONY: build clean fmt test
+
+## build
+build: clean 
+	@echo "Build..."
+	@go build -o build/nigiri-chopsticks
+
+## remove the compiled binaries in ./bin
+clean: 
+	@echo "Clean..."
+	@rm -rf ./build
+	@rm -rf ./registry
+
+## gofmt: Go Format
+fmt:
+	@echo "Gofmt..."
+	@if [ -n "$(gofmt -l .)" ]; then echo "Go code is not formatted"; exit 1; fi
+
+## help: prints this help message
+help:
+	@echo "Usage: \n"
+	@sed -n 's/^##//p' ${MAKEFILE_LIST} | column -t -s ':' |  sed -e 's/^/ /'
+
+
+## run: Run a bitcoin version against local nigiri (docker stop chopsticks before running this)
+run: clean build
+	./build/nigiri-chopsticks --rpc-addr 127.0.0.1:18433 --electrs-addr localhost:3002 --use-faucet --use-mining --use-logger --addr localhost:3000
+
+
+## runliquid: Run a liquid version against local nigiri (docker stop chopsticks-liquid before running this)
+runliquid: clean build
+	./build/nigiri-chopsticks --chain liquid --rpc-addr localhost:18884 --electrs-addr localhost:30001 --use-faucet --use-mining --use-logger --addr localhost:3001
+
+## run the short tests
+test: fmt 
+	@echo "Test..."
+	CI=false go test -v -race ./...
+
+## run the CI short tests
+testci: fmt 
+	@echo "Test..."
+	CI=true go test -v -race ./...
+
+
+================================================
+File: /helpers/main.go
+================================================
+package helpers
+
+import (
+	"bytes"
+	"crypto/tls"
+	"encoding/json"
+	"fmt"
+	"io/ioutil"
+	"net/http"
+	"time"
+)
+
+// RpcClient represents a JSON RPC client (over HTTP(s)).
+type RpcClient struct {
+	serverAddr string
+	httpClient *http.Client
+	timeout    int
+}
+
+// rpcRequest represent a RCP request
+type rpcRequest struct {
+	Method  string      `json:"method"`
+	Params  interface{} `json:"params"`
+	Id      int64       `json:"id"`
+	JsonRpc string      `json:"jsonrpc"`
+}
+
+type rpcResponse struct {
+	Id     int64           `json:"id"`
+	Result json.RawMessage `json:"result"`
+	Err    interface{}     `json:"error"`
+}
+
+func NewRpcClient(url string, useSSL bool, timeout int) (c *RpcClient, err error) {
+	var httpClient *http.Client
+
+	if useSSL {
+		t := &http.Transport{
+			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+		}
+		httpClient = &http.Client{Transport: t}
+	} else {
+		httpClient = &http.Client{}
+	}
+
+	c = &RpcClient{
+		serverAddr: url,
+		httpClient: httpClient,
+		timeout:    timeout,
+	}
+
+	return
+}
+
+// Call prepare & exec the request
+func (c *RpcClient) Call(method string, params interface{}) (status int, rr rpcResponse, err error) {
+	status = http.StatusInternalServerError
+	connectTimer := time.NewTimer(time.Duration(c.timeout) * time.Second)
+	rpcR := rpcRequest{method, params, time.Now().UnixNano(), "1.0"}
+	payloadBuffer := &bytes.Buffer{}
+	if err = json.NewEncoder(payloadBuffer).Encode(rpcR); err != nil {
+		return
+	}
+
+	req, err := http.NewRequest("POST", c.serverAddr, payloadBuffer)
+	if err != nil {
+		return
+	}
+	req.Header.Add("Content-Type", "application/json;charset=utf-8")
+	req.Header.Add("Accept", "application/json")
+
+	resp, err := c.doTimeoutRequest(connectTimer, req)
+	if err != nil {
+		return
+	}
+	defer resp.Body.Close()
+
+	data, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return
+	}
+	if resp.StatusCode != http.StatusOK {
+		out := map[string]map[string]interface{}{}
+		json.Unmarshal(data, &out)
+		err = fmt.Errorf("Method %s failed with error: %s", method, out["error"]["message"].(string))
+		status = resp.StatusCode
+		return
+	}
+
+	if err = json.Unmarshal(data, &rr); err != nil {
+		return
+	}
+
+	status = resp.StatusCode
+	return
+}
+
+// doTimeoutRequest process a HTTP request with timeout
+func (c *RpcClient) doTimeoutRequest(timer *time.Timer, req *http.Request) (*http.Response, error) {
+	type result struct {
+		resp *http.Response
+		err  error
+	}
+	done := make(chan result, 1)
+	go func() {
+		resp, err := c.httpClient.Do(req)
+		done <- result{resp, err}
+	}()
+	// Wait for the read or the timeout
+	select {
+	case r := <-done:
+		return r.resp, r.err
+	case <-timer.C:
+		return nil, fmt.Errorf("Timeout reading data from server")
+	}
+}
+
+// HandleRPCRequest call a JSONRPC and decoded the JSON body as response
+func HandleRPCRequest(client *RpcClient, method string, params []interface{}) (int, interface{}, error) {
+	status, resp, err := client.Call(method, params)
+	if err != nil {
+		return status, "", err
+	}
+	var out interface{}
+	err = json.Unmarshal(resp.Result, &out)
+	if err != nil {
+		return http.StatusInternalServerError, "", err
+	}
+
+	return status, out, nil
+}
+
+
+================================================
+File: /helpers/rescan.go
+================================================
+package helpers
+
+import (
+	"fmt"
+)
+
+func RescanBlockchain(client *RpcClient) error {
+	_, _, err := HandleRPCRequest(client, "rescanblockchain", []interface{}{})
+	if err != nil {
+		return fmt.Errorf("could not rescan: %w", err)
+	}
+
+	return nil
+}
+
+
+================================================
+File: /helpers/registry.go
+================================================
+package helpers
+
+import (
+	"encoding/json"
+	"errors"
+	"strings"
+
+	"github.com/sdomino/scribble"
+)
+
+// Registry handles writing/reading json file where are stored info about issued asset
+type Registry struct {
+	db *scribble.Driver
+}
+
+// NewRegistry returns a new Registry of error if the path is not absolute
+func NewRegistry(path string) (*Registry, error) {
+	r := &Registry{}
+	db, err := scribble.New(path, nil)
+	if err != nil {
+		return nil, err
+	}
+	r.db = db
+	return r, nil
+}
+
+// AddEntry adds an entry to the register by previously making sure that
+// the incoming entry does not already exist in the registry
+func (r *Registry) AddEntry(asset string, issuanceInput map[string]interface{}, contract map[string]interface{}) error {
+	entry := map[string]interface{}{}
+	err := r.db.Read("registry", asset, &entry)
+	if err != nil && !strings.Contains(err.Error(), "no such file or directory") {
+		return err
+	}
+
+	if len(entry) != 0 {
+		return errors.New("Asset already exists on registry")
+	}
+
+	entry = map[string]interface{}{
+		"asset":         asset,
+		"issuance_txin": issuanceInput,
+		"contract":      contract,
+		"name":          contract["name"].(string),
+		"ticker":        contract["ticker"].(string),
+		"precision":     contract["precision"].(int),
+	}
+	return r.db.Write("registry", asset, entry)
+}
+
+// GetEntry returns and entry if it exist in registry or NIL
+func (r *Registry) GetEntry(asset string) (map[string]interface{}, error) {
+	entry := map[string]interface{}{}
+	err := r.db.Read("registry", asset, &entry)
+	if err != nil && !strings.Contains(err.Error(), "no such file or directory") {
+
+		return nil, err
+	}
+
+	return entry, nil
+}
+
+func (r *Registry) GetEntries(assets []interface{}) ([]map[string]interface{}, error) {
+	entries := []map[string]interface{}{}
+
+	if len(assets) == 0 {
+		records, err := r.db.ReadAll("registry")
+		if err != nil {
+			return nil, err
+		}
+
+		for _, f := range records {
+			entry := map[string]interface{}{}
+			json.Unmarshal([]byte(f), &entry)
+			entries = append(entries, entry)
+		}
+	} else {
+		for _, asset := range assets {
+			entry := map[string]interface{}{}
+			r.db.Read("registry", asset.(string), &entry)
+			entries = append(entries, entry)
+		}
+	}
+
+	return entries, nil
+}
+
+
+================================================
+File: /helpers/wallet.go
+================================================
+package helpers
+
+import (
+	"fmt"
+	"net/http"
+)
+
+func CreateWalletIfNotExists(client *RpcClient) error {
+
+	status, resp, err := HandleRPCRequest(client, "listwallets", []interface{}{})
+	if err != nil {
+		return fmt.Errorf("could not list wallets: %w", err)
+	}
+
+	numOfWallets, ok := resp.([]interface{})
+	if !ok {
+		return fmt.Errorf("could not list wallets: %w", err)
+	}
+
+	if status == http.StatusOK && len(numOfWallets) == 0 {
+		_, _, err = HandleRPCRequest(client, "createwallet", []interface{}{""})
+		if err != nil {
+			return fmt.Errorf("could not create wallet: %w", err)
+		}
+	}
+
+	return nil
+}
+
+
+================================================
+File: /config/main.go
+================================================
+package config
+
+import (
+	"flag"
+	"fmt"
+	"os"
+	"path/filepath"
+	"strings"
+)
+
+const (
+	defaultTLSEnabled    = false
+	defaultLoggerEnabled = false
+	defaultFaucetEnabled = false
+	defaultMiningEnabled = false
+
+	defaultAddr        = "localhost:3000"
+	defaultElectrsAddr = "localhost:3002"
+	defaultRPCAddr     = "localhost:19001"
+	defaultRPCCookie   = "admin1:123"
+	defaultChain       = "bitcoin"
+)
+
+var defaultRegistryPath, _ = os.Getwd()
+
+// Config type is used to parse flag options
+type Config interface {
+	IsTLSEnabled() bool
+	IsFaucetEnabled() bool
+	IsLoggerEnabled() bool
+	IsMiningEnabled() bool
+	ListenURL() string
+	RPCServerURL() string
+	ElectrsURL() string
+	Chain() string
+	RegistryPath() string
+}
+
+type config struct {
+	server struct {
+		tlsEnabled    bool
+		faucetEnabled bool
+		miningEnabled bool
+		loggerEnabled bool
+		host          string
+		port          string
+		chain         string
+		registryPath  string
+	}
+	electrs struct {
+		host string
+		port string
+	}
+	rpcServer struct {
+		user     string
+		password string
+		host     string
+		port     string
+	}
+}
+
+// NewConfigFromFlags parses flags and returns a Config
+func NewConfigFromFlags() (Config, error) {
+	tlsEnabled := flag.Bool("use-tls", defaultTLSEnabled, "Set true to use https")
+	faucetEnabled := flag.Bool("use-faucet", defaultFaucetEnabled, "Set to use faucet")
+	miningEnabled := flag.Bool("use-mining", defaultMiningEnabled, "Set to false to disable block mining right after broadcasting requests")
+	loggerEnabled := flag.Bool("use-logger", defaultLoggerEnabled, "Set true to log every request/response")
+
+	addr := flag.String("addr", defaultAddr, "Chopsticks listen address")
+	electrsAddr := flag.String("electrs-addr", defaultElectrsAddr, "Elctrs HTTP server address")
+	rpcAddr := flag.String("rpc-addr", defaultRPCAddr, "RPC server address")
+	rpcCookie := flag.String("rpc-cookie", defaultRPCCookie, "RPC server user and password")
+	chain := flag.String("chain", defaultChain, "Set default chain. Eihter 'bitcoin' or 'liquid'")
+	registryPath := flag.String("registry-path", defaultRegistryPath, "(Liquid only) Set path for asset registry JSON file")
+	flag.Parse()
+
+	host, port, ok := splitString(*addr)
+	if !ok {
+		flag.PrintDefaults()
+		return nil, fmt.Errorf("Invalid server address")
+	}
+
+	electrsHost, electrsPort, ok := splitString(*electrsAddr)
+	if !ok {
+		flag.PrintDefaults()
+		return nil, fmt.Errorf("Invalid electrs HTTP server address")
+	}
+
+	rpcHost, rpcPort, ok := splitString(*rpcAddr)
+	if !ok {
+		flag.PrintDefaults()
+		return nil, fmt.Errorf("Invalid RPC server address")
+	}
+
+	rpcUser, rpcPassword, ok := splitString(*rpcCookie)
+	if !ok {
+		flag.PrintDefaults()
+		return nil, fmt.Errorf("Invalid RPC server cookie")
+	}
+
+	if !filepath.IsAbs(*registryPath) {
+		flag.PrintDefaults()
+		return nil, fmt.Errorf("Invalid registry path")
+	}
+
+	c := &config{}
+	c.server.loggerEnabled = *loggerEnabled
+	c.server.tlsEnabled = *tlsEnabled
+	c.server.faucetEnabled = *faucetEnabled
+	c.server.miningEnabled = *miningEnabled
+	c.server.host = host
+	c.server.port = port
+	c.server.chain = *chain
+	c.server.registryPath = *registryPath
+
+	c.electrs.host = electrsHost
+	c.electrs.port = electrsPort
+
+	c.rpcServer.host = rpcHost
+	c.rpcServer.port = rpcPort
+	c.rpcServer.user = rpcUser
+	c.rpcServer.password = rpcPassword
+
+	return c, nil
+}
+
+func (c *config) IsTLSEnabled() bool {
+	return c.server.tlsEnabled
+}
+
+func (c *config) IsFaucetEnabled() bool {
+	return c.server.faucetEnabled
+}
+
+func (c *config) IsLoggerEnabled() bool {
+	return c.server.loggerEnabled
+}
+
+func (c *config) IsMiningEnabled() bool {
+	return c.server.miningEnabled
+}
+
+func (c *config) ListenURL() string {
+	return fmt.Sprintf("%s:%s", c.server.host, c.server.port)
+}
+
+func (c *config) RPCServerURL() string {
+	return fmt.Sprintf("http://%s:%s@%s:%s", c.rpcServer.user, c.rpcServer.password, c.rpcServer.host, c.rpcServer.port)
+}
+
+func (c *config) ElectrsURL() string {
+	return fmt.Sprintf("http://%s:%s", c.electrs.host, c.electrs.port)
+}
+
+func (c *config) Chain() string {
+	return c.server.chain
+}
+
+func (c *config) RegistryPath() string {
+	return c.server.registryPath
+}
+
+func splitString(addr string) (string, string, bool) {
+	if splitAddr := strings.Split(addr, ":"); len(splitAddr) == 2 {
+		return splitAddr[0], splitAddr[1], true
+	}
+
+	return "", "", false
+}
+
+func NewTestConfig() Config {
+	c := &config{}
+	rpcPort := "18433"
+	if os.Getenv("CI") == "true" {
+		rpcPort = "18443"
+	}
+
+	c.server.tlsEnabled = false
+	c.server.loggerEnabled = false
+	c.server.faucetEnabled = true
+	c.server.miningEnabled = true
+	c.server.host = "localhost"
+	c.server.port = "7000"
+	c.server.chain = "bitcoin"
+
+	c.electrs.host = "localhost"
+	c.electrs.port = "30000"
+
+	c.rpcServer.host = "localhost"
+	c.rpcServer.port = rpcPort
+	c.rpcServer.user = "admin1"
+	c.rpcServer.password = "123"
+
+	return c
+}
+
+func NewLiquidTestConfig() Config {
+	c := &config{}
+	rpcPort := "18884"
+	if os.Getenv("CI") == "true" {
+		rpcPort = "18884"
+	}
+
+	c.server.tlsEnabled = false
+	c.server.loggerEnabled = false
+	c.server.faucetEnabled = true
+	c.server.miningEnabled = true
+	c.server.host = "localhost"
+	c.server.port = "7001"
+	c.server.chain = "liquid"
+	c.server.registryPath = defaultRegistryPath
+
+	c.electrs.host = "localhost"
+	c.electrs.port = "30001"
+
+	c.rpcServer.host = "localhost"
+	c.rpcServer.port = rpcPort
+	c.rpcServer.user = "admin1"
+	c.rpcServer.password = "123"
+
+	return c
+}
+
+
+================================================
+File: /config/main_test.go
+================================================
+package config
+
+import "testing"
+
+func TestNewConfigs(t *testing.T) {
+	conf := NewTestConfig()
+	if conf == nil {
+		t.Fatal("Expected Config interface, got <nil>")
+	}
+
+	conf = NewLiquidTestConfig()
+	if conf == nil {
+		t.Fatal("Expected Config interface, got <nil>")
+	}
+}
+
+
+================================================
+File: /Dockerfile
+================================================
+# Start by building the application.
+FROM golang:alpine as build
+
+WORKDIR /go/src/app
+ADD . /go/src/app
+
+## This beacuse of net package use dynamic linking libc
+## https://stackoverflow.com/a/36308464/4567832 
+RUN go build -tags netgo -a -o /go/bin/app
+
+# Now copy it into our base image.
+FROM alpine:latest
+COPY --from=build /go/bin/app /
+ENTRYPOINT ["/app"]
+
+================================================
+File: /go.mod
+================================================
+module github.com/vulpemventures/nigiri-chopsticks
+
+go 1.12
+
+require (
+	github.com/gorilla/mux v1.7.0
+	github.com/jcelliott/lumber v0.0.0-20160324203708-dd349441af25 // indirect
+	github.com/konsorten/go-windows-terminal-sequences v1.0.2 // indirect
+	github.com/sdomino/scribble v0.0.0-20191024200645-4116320640ba
+	github.com/sirupsen/logrus v1.4.0
+	golang.org/x/crypto v0.31.0
+)
+
+
+================================================
+File: /LICENSE
+================================================
+MIT License
+
+Copyright (c) 2019 Vulpem Ventures
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+
+================================================
+File: /router/address_handler.go
+================================================
+package router
+
+import (
+	"encoding/json"
+	"net/http"
+
+	"github.com/vulpemventures/nigiri-chopsticks/helpers"
+)
+
+// HandleAddressRequest calls the `getnewaddress` and returns the native segwit one
+func (r *Router) HandleAddressRequest(res http.ResponseWriter, req *http.Request) {
+	res.Header().Set("Access-Control-Allow-Origin", "*")
+
+	status, resp, err := helpers.HandleRPCRequest(r.RPCClient, "getnewaddress", []interface{}{})
+	if err != nil {
+		http.Error(res, err.Error(), status)
+		return
+	}
+
+	json.NewEncoder(res).Encode(map[string]string{"address": resp.(string)})
+}
+
+
+================================================
+File: /router/main.go
+================================================
+package router
+
+import (
+	"net/http"
+	"strings"
+	"time"
+
+	"github.com/gorilla/mux"
+	log "github.com/sirupsen/logrus"
+	cfg "github.com/vulpemventures/nigiri-chopsticks/config"
+	"github.com/vulpemventures/nigiri-chopsticks/faucet"
+	"github.com/vulpemventures/nigiri-chopsticks/helpers"
+	"github.com/vulpemventures/nigiri-chopsticks/router/middleware"
+)
+
+// Router extends gorilla Router
+type Router struct {
+	*mux.Router
+	Config    cfg.Config
+	RPCClient *helpers.RpcClient
+	Faucet    *faucet.Faucet
+	Registry  *helpers.Registry
+}
+
+// NewRouter returns a new Router instance
+func NewRouter(config cfg.Config) *Router {
+	router := mux.NewRouter().StrictSlash(true)
+
+	// here we are forcing always the calls against the bitcoin/elements default wallet ""
+	rpcClient, _ := helpers.NewRpcClient(config.RPCServerURL()+"/wallet/", false, 10)
+
+	r := &Router{router, config, rpcClient, nil, nil}
+
+	// Handle all preflight request
+	r.Router.Methods(http.MethodOptions).HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// fmt.Printf("OPTIONS")
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
+		w.Header().Set("Access-Control-Allow-Headers", "*")
+		w.WriteHeader(http.StatusNoContent)
+	})
+
+	// From Bitcoin core 0.21 the default wallet "" is not created anymore.
+	//So we check if none is already loaded and we create it
+	err := helpers.CreateWalletIfNotExists(rpcClient)
+	if err != nil {
+		log.WithError(err).Fatalln("creating wallet")
+	}
+	log.Debug("empty wallet has been created")
+
+	if r.Config.IsFaucetEnabled() {
+		faucet := faucet.NewFaucet(config.RPCServerURL(), rpcClient)
+		r.Faucet = faucet
+		r.HandleFunc("/faucet", r.HandleFaucetRequest).Methods(http.MethodPost, http.MethodOptions)
+		if config.Chain() == "liquid" {
+			registry, _ := helpers.NewRegistry(config.RegistryPath())
+			r.Registry = registry
+			r.HandleFunc("/mint", r.HandleMintRequest).Methods(http.MethodPost, http.MethodOptions)
+			r.HandleFunc("/registry", r.HandleRegistryRequest).Methods(http.MethodPost, http.MethodOptions)
+		}
+
+		var numBlockToGenerate int = 1
+		if config.Chain() == "bitcoin" {
+			numBlockToGenerate = 101
+		}
+		status, blockHashes, err := r.Faucet.Fund(numBlockToGenerate)
+
+		for err != nil && strings.Contains(err.Error(), "Loading") && status == 500 {
+			time.Sleep(2 * time.Second)
+			status, blockHashes, err = r.Faucet.Fund(numBlockToGenerate)
+		}
+		if err != nil {
+			log.WithField("status", status).WithError(err).Warning("Faucet not funded, check the error")
+		}
+		if len(blockHashes) > 0 {
+			log.WithField("num_blocks", len(blockHashes)).Info("Faucet has been funded mining some blocks")
+		}
+
+		// From Elements core 0.21 if we use initialfreecoins we must rescan the chain
+		err = helpers.RescanBlockchain(rpcClient)
+		if err != nil {
+			log.WithError(err).Fatalln("rescan blockchain")
+		}
+		log.Debug("rescan completed")
+	}
+
+	if config.IsLoggerEnabled() {
+		r.Use(middleware.Logger)
+	}
+
+	r.HandleFunc("/getnewaddress", r.HandleAddressRequest).Methods(http.MethodGet, http.MethodOptions)
+	r.HandleFunc("/tx", r.HandleBroadcastRequest).Methods(http.MethodPost, http.MethodOptions)
+	r.PathPrefix("/").HandlerFunc(r.HandleElectrsRequest)
+
+	return r
+}
+
+
+================================================
+File: /router/broadcast_handler.go
+================================================
+package router
+
+import (
+	"net/http"
+
+	log "github.com/sirupsen/logrus"
+)
+
+// HandleBroadcastRequest forwards the request to the electrs HTTP server and mines a block if mining is enabled
+func (r *Router) HandleBroadcastRequest(res http.ResponseWriter, req *http.Request) {
+	r.HandleElectrsRequest(res, req)
+
+	if r.Config.IsMiningEnabled() {
+		status, blockHashes, err := r.Faucet.Mine(1)
+		if err != nil {
+			log.WithError(err).WithField("status", status).Warning("An unexpected error occured while mining blocks")
+		} else {
+			if r.Config.IsLoggerEnabled() {
+				log.WithField("blocks mined", len(blockHashes)).Info("Transaction has been confirmed")
+			}
+		}
+	}
+}
+
+
+================================================
+File: /router/registry_handler.go
+================================================
+package router
+
+import (
+	"encoding/json"
+	"net/http"
+)
+
+// HandleRegistryRequest accepts a list of asset ids and returns info retrieved from
+// the asset registry about them
+func (r *Router) HandleRegistryRequest(res http.ResponseWriter, req *http.Request) {
+	res.Header().Set("Access-Control-Allow-Origin", "*")
+
+	body := parseRequestBody(req.Body)
+	assets := body["assets"]
+	if assets == nil {
+		http.Error(res, "Malformed Request", http.StatusBadRequest)
+		return
+	}
+
+	entries, err := r.Registry.GetEntries(assets.([]interface{}))
+	if err != nil {
+		http.Error(res, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	json.NewEncoder(res).Encode(entries)
+	return
+}
+
+
+================================================
+File: /router/electrs_handler_test.go
+================================================
+package router
+
+import (
+	"encoding/json"
+	"fmt"
+	"net/http"
+	"net/http/httptest"
+	"strings"
+	"testing"
+	"time"
+)
+
+func TestAssetEndpointWithExtraInfo(t *testing.T) {
+	r := NewTestRouter(withLiquid)
+	resp := mintRequest(r, liquidAddress, assetQuantity, name, ticker)
+
+	parsedResp := map[string]interface{}{}
+	json.Unmarshal(resp.Body.Bytes(), &parsedResp)
+	asset := parsedResp["asset"].(string)
+
+	time.Sleep(5 * time.Second)
+
+	resp = assetRequest(r, asset)
+	if resp.Code != http.StatusOK {
+		t.Fatalf("Expected status %d, got: %d\n", http.StatusOK, resp.Code)
+	}
+
+	parsedResp = map[string]interface{}{}
+	json.Unmarshal(resp.Body.Bytes(), &parsedResp)
+	resName := parsedResp["name"].(string)
+	resTicker := parsedResp["ticker"].(string)
+
+	if strings.Compare(name, resName) != 0 {
+		t.Fatalf("Expected asset name: %s, got: %s\n", name, resName)
+	}
+	if strings.Compare(ticker, resTicker) != 0 {
+		t.Fatalf("Expected asset ticker: %s, got: %s\n", ticker, resTicker)
+	}
+}
+
+func TestAssetEndpointWithoutExtraInfo(t *testing.T) {
+	r := NewTestRouter(withLiquid)
+	resp := mintRequest(r, liquidAddress, assetQuantity, nil, nil)
+
+	parsedResp := map[string]interface{}{}
+	json.Unmarshal(resp.Body.Bytes(), &parsedResp)
+	asset := parsedResp["asset"].(string)
+
+	time.Sleep(5 * time.Second)
+
+	resp = assetRequest(r, asset)
+	if resp.Code != http.StatusOK {
+		t.Fatalf("Expected status %d, got: %d\n", http.StatusOK, resp.Code)
+	}
+
+	parsedResp = map[string]interface{}{}
+	json.Unmarshal(resp.Body.Bytes(), &parsedResp)
+
+	if parsedResp["name"] != nil {
+		t.Fatalf("Asset name should not be defined")
+	}
+
+	if parsedResp["ticker"] != nil {
+		t.Fatalf("Asset ticker should not be defined")
+	}
+}
+
+func TestAssetEndpointForNonExistingAssetID(t *testing.T) {
+	r := NewTestRouter(withLiquid)
+	assetID := "dummyID"
+	resp := assetRequest(r, assetID)
+
+	if resp.Code != http.StatusBadRequest {
+		t.Errorf("for non existing assetID: %v, expected status code is 400, actual: %v\n", assetID, resp.Code)
+	}
+}
+
+func assetRequest(r *Router, asset interface{}) *httptest.ResponseRecorder {
+	path := fmt.Sprintf("/asset/%s", asset)
+	req, _ := http.NewRequest("GET", path, nil)
+	return doRequest(r, req)
+}
+
+
+================================================
+File: /router/faucet_handler.go
+================================================
+package router
+
+import (
+	"encoding/json"
+	"io"
+	"net/http"
+)
+
+// HandleFaucetRequest sends funds to the address passed in the request body by
+// retrieving the signed transaction from the faucet and broadcasting via the
+// electrs broadcast endpoint
+func (r *Router) HandleFaucetRequest(res http.ResponseWriter, req *http.Request) {
+	res.Header().Set("Access-Control-Allow-Origin", "*")
+
+	body := parseRequestBody(req.Body)
+	address, ok := body["address"].(string)
+	if !ok {
+		http.Error(res, "Malformed Request: missing address", http.StatusBadRequest)
+		return
+	}
+	amount, ok := body["amount"].(float64)
+	if !ok {
+		// the default 100 000 000 satoshis
+		amount = 1
+	}
+	asset, ok := body["asset"].(string)
+	if !ok {
+		// this means sending bitcoin
+		asset = ""
+	}
+
+	var status int
+	var tx string
+	var err error
+
+	if r.Config.Chain() == "liquid" {
+		status, tx, err = r.Faucet.SendLiquidTransaction(address, amount, asset)
+	} else {
+		status, tx, err = r.Faucet.SendBitcoinTransaction(address, amount)
+	}
+	if err != nil {
+		http.Error(res, err.Error(), status)
+		return
+	}
+
+	if r.Config.IsMiningEnabled() {
+		r.Faucet.Mine(1)
+	}
+	json.NewEncoder(res).Encode(map[string]string{"txId": tx})
+	return
+}
+
+// HandleMintRequest is a Liquid only endpoint that issues a requested quantity
+// of a new asset and sends it to the requested address
+func (r *Router) HandleMintRequest(res http.ResponseWriter, req *http.Request) {
+	res.Header().Set("Access-Control-Allow-Origin", "*")
+
+	body := parseRequestBody(req.Body)
+	address, ok := body["address"].(string)
+	if !ok {
+		http.Error(res, "Malformed Request: missing address", http.StatusBadRequest)
+		return
+	}
+	// NOTICE this is here for backward compatibility. We will deprecate and move to amount
+	quantity, qtyOk := body["quantity"].(float64)
+	amount, amtOk := body["amount"].(float64)
+
+	if !qtyOk && !amtOk {
+		http.Error(res, "Malformed Request: missing amount", http.StatusBadRequest)
+		return
+	}
+
+	if qtyOk && !amtOk {
+		amount = quantity
+	}
+
+	status, resp, err := r.Faucet.Mint(address, amount)
+	if err != nil {
+		http.Error(res, err.Error(), status)
+		return
+	}
+
+	asset, ok := resp["asset"].(string)
+	if !ok {
+		http.Error(res, "Internal error", http.StatusInternalServerError)
+		return
+	}
+	issuanceTx, ok := resp["issuance_txin"].(map[string]interface{})
+	if !ok {
+		http.Error(res, "Internal error", http.StatusInternalServerError)
+		return
+	}
+
+	name, nameOk := body["name"].(string)
+	ticker, tickerOk := body["ticker"].(string)
+
+	if (nameOk && !tickerOk) || (!nameOk && tickerOk) {
+		http.Error(res, "Malformed Request: missing name or ticker", http.StatusBadRequest)
+		return
+	}
+
+	if nameOk && tickerOk {
+		contract := map[string]interface{}{
+			"name":      name,
+			"ticker":    ticker,
+			"precision": 8, // we hardcode 8 as precision which is default with issueasset RPC on elements node
+		}
+		r.Registry.AddEntry(asset, issuanceTx, contract)
+	}
+
+	if r.Config.IsMiningEnabled() {
+		r.Faucet.Mine(1)
+	}
+
+	json.NewEncoder(res).Encode(resp)
+	return
+}
+
+func parseRequestBody(body io.ReadCloser) map[string]interface{} {
+	decoder := json.NewDecoder(body)
+	var decodedBody map[string]interface{}
+	decoder.Decode(&decodedBody)
+
+	return decodedBody
+}
+
+
+================================================
+File: /router/faucet_handler_test.go
+================================================
+package router
+
+import (
+	"bytes"
+	"encoding/json"
+	"net/http"
+	"net/http/httptest"
+	"os"
+	"path/filepath"
+	"strconv"
+	"strings"
+	"testing"
+	"time"
+)
+
+const (
+	withLiquid       = true
+	btcAddress       = "mpSGWQvbAiRt2UNLST1CdWUufoPVsVwLyK"
+	badBtcAddress    = ""
+	liquidAddress    = "CTEsqL1x9ooWWG9HBaHUpvS2DGJJ4haYdkTQPKj9U8CCdwT5vcudhbYUT8oQwwoS11aYtdznobfgT8rj"
+	badLiquidAddress = ""
+	assetQuantity    = 1000
+	badAssetQuantity = -1
+	name             = "test"
+	ticker           = "TST"
+)
+
+func TestBitcoinFaucet(t *testing.T) {
+	t.Skip()
+	r := NewTestRouter(!withLiquid)
+
+	blockCountResp := blockCountRequest(r)
+	if blockCountResp.Code != http.StatusOK {
+		t.Fatalf("Expected status %d, got: %d\n", http.StatusOK, blockCountResp.Code)
+	}
+	prevBlockCount, _ := strconv.Atoi(blockCountResp.Body.String())
+
+	faucetResp := faucetRequest(r, btcAddress, 1, "")
+	if faucetResp.Code != http.StatusOK {
+		t.Fatalf("Expected status %d, got: %d\n", http.StatusOK, faucetResp.Code)
+	}
+
+	// give electrs the time to update block count
+	time.Sleep(5 * time.Second)
+
+	blockCountResp = blockCountRequest(r)
+	if blockCountResp.Code != http.StatusOK {
+		t.Fatalf("Expected status %d, got: %d\n", http.StatusOK, blockCountResp.Code)
+	}
+	blockCount, _ := strconv.Atoi(blockCountResp.Body.String())
+	blockMined := blockCount - prevBlockCount
+	if blockMined != 1 {
+		t.Fatalf("Expected 1 block mined, got %d\n", blockMined)
+	}
+}
+
+func TestBitcoinFaucetShouldFail(t *testing.T) {
+	t.Skip()
+
+	r := NewTestRouter(!withLiquid)
+
+	resp := faucetRequest(r, "", 0, "")
+	checkFailed(t, resp, "Invalid address")
+
+	resp = faucetRequest(r, badLiquidAddress, 0, "")
+	checkFailed(t, resp, "Invalid address")
+}
+
+func TestLiquidFaucet(t *testing.T) {
+	t.Skip()
+
+	r := NewTestRouter(withLiquid)
+
+	blockCountResp := blockCountRequest(r)
+	if blockCountResp.Code != http.StatusOK {
+		t.Fatalf("Expected status %d, got: %d\n", http.StatusOK, blockCountResp.Code)
+	}
+	prevBlockCount, _ := strconv.Atoi(blockCountResp.Body.String())
+
+	resp := faucetRequest(r, liquidAddress, 0, "")
+	if resp.Code != http.StatusOK {
+		t.Fatalf("Expected status %d, got: %d\n", http.StatusOK, resp.Code)
+	}
+
+	time.Sleep(5 * time.Second)
+
+	blockCountResp = blockCountRequest(r)
+	if blockCountResp.Code != http.StatusOK {
+		t.Fatalf("Expected status %d, got: %d\n", http.StatusOK, blockCountResp.Code)
+	}
+	blockCount, _ := strconv.Atoi(blockCountResp.Body.String())
+	blockMined := blockCount - prevBlockCount
+	if blockMined != 1 {
+		t.Fatalf("Expected 1 block mined, got %d\n", blockMined)
+	}
+	prevBlockCount, _ = strconv.Atoi(blockCountResp.Body.String())
+
+	addrOfNode, err := getNewAddressFromNode(r)
+	if err != nil {
+		t.Fatalf("getNewAddressFromNode error")
+	}
+
+	resp = mintRequest(r, addrOfNode, assetQuantity, name, ticker)
+	if resp.Code != http.StatusOK {
+		t.Fatalf("Expected status %d, got: %d\n", http.StatusOK, resp.Code)
+	}
+	time.Sleep(5 * time.Second)
+
+	var decodedBody map[string]interface{}
+	err = json.Unmarshal(resp.Body.Bytes(), &decodedBody)
+	if err != nil {
+		t.Fatalf("decoding response error")
+	}
+
+	resp2 := faucetRequest(r, liquidAddress, 0, decodedBody["asset"].(string))
+	if resp2.Code != http.StatusOK {
+		t.Fatalf("Expected status %d, got: %d\n", http.StatusOK, resp2.Code)
+	}
+	time.Sleep(5 * time.Second)
+	blockCountResp = blockCountRequest(r)
+	blockCount, _ = strconv.Atoi(blockCountResp.Body.String())
+	blockMined = blockCount - prevBlockCount
+	if blockMined < 1 {
+		t.Fatalf("Expected at least 1 block mined, got %d\n", blockMined)
+	}
+
+}
+
+func TestLiquidFaucetShouldFail(t *testing.T) {
+	t.Skip()
+
+	r := NewTestRouter(withLiquid)
+
+	resp := faucetRequest(r, "", 0, "")
+	checkFailed(t, resp, "Invalid address")
+
+	resp = faucetRequest(r, badLiquidAddress, 0, "")
+	checkFailed(t, resp, "Invalid address")
+
+	resp = mintRequest(r, "", assetQuantity, nil, nil)
+	checkFailed(t, resp, "Invalid address")
+
+	resp = mintRequest(r, liquidAddress, nil, nil, nil)
+	checkFailed(t, resp, "Malformed Request")
+
+	resp = mintRequest(r, badLiquidAddress, assetQuantity, nil, nil)
+	checkFailed(t, resp, "Invalid address")
+
+	resp = mintRequest(r, liquidAddress, badAssetQuantity, nil, nil)
+	checkFailed(t, resp, "Amount out of range")
+
+	resp = mintRequest(r, liquidAddress, assetQuantity, name, nil)
+	checkFailed(t, resp, "Malformed Request")
+
+	resp = mintRequest(r, liquidAddress, assetQuantity, nil, name)
+	checkFailed(t, resp, "Malformed Request")
+
+	os.RemoveAll(filepath.Join(r.Config.RegistryPath(), "registry"))
+}
+
+func faucetRequest(r *Router, address string, amount float64, asset string) *httptest.ResponseRecorder {
+
+	request := map[string]interface{}{
+		"address": address,
+	}
+
+	if amount > 0 {
+		request["amount"] = amount
+	}
+
+	if len(asset) > 0 {
+		request["asset"] = asset
+	}
+
+	payload, _ := json.Marshal(request)
+	req, _ := http.NewRequest("POST", "/faucet", bytes.NewBuffer(payload))
+
+	return doRequest(r, req)
+}
+
+func blockCountRequest(r *Router) *httptest.ResponseRecorder {
+	req, _ := http.NewRequest("GET", "/blocks/tip/height", nil)
+	return doRequest(r, req)
+}
+
+func mintRequest(r *Router, address, quantity, name, ticker interface{}) *httptest.ResponseRecorder {
+	request := map[string]interface{}{
+		"address":  address,
+		"quantity": quantity,
+		"name":     name,
+		"ticker":   ticker,
+	}
+	payload, _ := json.Marshal(request)
+
+	req, _ := http.NewRequest("POST", "/mint", bytes.NewBuffer(payload))
+	return doRequest(r, req)
+}
+
+func doRequest(r *Router, req *http.Request) *httptest.ResponseRecorder {
+	rr := httptest.NewRecorder()
+	r.ServeHTTP(rr, req)
+	return rr
+}
+
+func checkFailed(t *testing.T, resp *httptest.ResponseRecorder, expectedError string) {
+	if resp.Code == http.StatusOK {
+		t.Fatalf("Should return error, got status: %d\n", resp.Code)
+	}
+
+	err := resp.Body.String()
+	if !strings.Contains(err, expectedError) {
+		t.Fatalf("Expected error: %s, got: %s\n", expectedError, err)
+	}
+}
+
+func getNewAddressFromNode(r *Router) (string, error) {
+	_, resp, err := handleRPCRequest(r.RPCClient, "getnewaddress", nil)
+	if err != nil {
+		return "", err
+	}
+
+	return resp.(string), nil
+}
+
+
+================================================
+File: /router/electrs_handler.go
+================================================
+package router
+
+import (
+	"bytes"
+	"encoding/json"
+	"io/ioutil"
+	"net/http"
+	"net/http/httputil"
+	"net/url"
+	"strconv"
+	"strings"
+
+	"github.com/vulpemventures/nigiri-chopsticks/helpers"
+)
+
+type transport struct {
+	r *helpers.Registry
+}
+
+func (t *transport) RoundTrip(req *http.Request) (resp *http.Response, err error) {
+	resp, err = http.DefaultTransport.RoundTrip(req)
+	if err != nil {
+		return nil, err
+	}
+
+	// check when request path is /asset/{asset_id}
+	if strings.HasPrefix(req.URL.Path, "/asset/") {
+		if s := strings.Split(req.URL.Path, "/"); len(s) == 3 {
+			if resp.StatusCode == http.StatusOK {
+				// parse response body
+				payload, _ := ioutil.ReadAll(resp.Body)
+				body := map[string]interface{}{}
+				json.Unmarshal(payload, &body)
+
+				// get registry entry for asset
+				asset := body["asset_id"].(string)
+				entry, _ := t.r.GetEntry(asset)
+
+				// if entry exist add extra info to response
+				if len(entry) > 0 {
+					body["name"] = entry["name"]
+					body["ticker"] = entry["ticker"]
+					body["precision"] = entry["precision"]
+					payload, _ = json.Marshal(body)
+				}
+
+				newBody := ioutil.NopCloser(bytes.NewReader(payload))
+				resp.Body = newBody
+				resp.ContentLength = int64(len(payload))
+				resp.Header.Set("Content-Length", strconv.Itoa(len(payload)))
+			}
+		}
+	}
+
+	return resp, nil
+}
+
+// HandleElectrsRequest forwards every request to the electrs HTTP server
+func (r *Router) HandleElectrsRequest(res http.ResponseWriter, req *http.Request) {
+	electrsURL := r.Config.ElectrsURL()
+	parsedURL, _ := url.Parse(electrsURL)
+
+	req.Header.Set("X-Forwarded-Host", req.Header.Get("Host"))
+	req.Host = parsedURL.Host
+	req.URL.Host = parsedURL.Host
+	req.URL.Scheme = parsedURL.Scheme
+
+	proxy := httputil.NewSingleHostReverseProxy(parsedURL)
+	proxy.Transport = &transport{r.Registry}
+	proxy.ServeHTTP(res, req)
+}
+
+
+================================================
+File: /router/registry_handler_test.go
+================================================
+package router
+
+import (
+	"bytes"
+	"encoding/json"
+	"net/http"
+	"net/http/httptest"
+	"os"
+	"path/filepath"
+	"strings"
+	"testing"
+)
+
+func TestRegistry(t *testing.T) {
+	t.Skip()
+	r := NewTestRouter(withLiquid)
+	resp := mintRequest(r, liquidAddress, assetQuantity, name, ticker)
+
+	parsedResp := map[string]interface{}{}
+	json.Unmarshal(resp.Body.Bytes(), &parsedResp)
+	asset := parsedResp["asset"].(string)
+
+	resp = registryRequest(r, []interface{}{})
+	if resp.Code != http.StatusOK {
+		t.Fatalf("Expected status %d, got: %d\n", http.StatusOK, resp.Code)
+	}
+
+	list := []map[string]interface{}{}
+	json.Unmarshal(resp.Body.Bytes(), &list)
+
+	if len(list) < 1 {
+		t.Fatalf("Expected entry list to not be empty")
+	}
+
+	resAsset := list[0]["asset"].(string)
+	resName := list[0]["name"].(string)
+	resTicker := list[0]["ticker"].(string)
+
+	if strings.Compare(asset, resAsset) != 0 {
+		t.Fatalf("Expected asset hash: %s, got: %s", asset, resAsset)
+	}
+	if strings.Compare(name, resName) != 0 {
+		t.Fatalf("Expected name hash: %s, got: %s", name, resName)
+	}
+	if strings.Compare(ticker, resTicker) != 0 {
+		t.Fatalf("Expected ticker hash: %s, got: %s", ticker, resTicker)
+	}
+}
+
+func TestRegistryShouldFail(t *testing.T) {
+	t.Skip()
+	r := NewTestRouter(withLiquid)
+	resp := registryRequest(r, nil)
+	checkFailed(t, resp, "Malformed Request")
+
+	os.RemoveAll(filepath.Join(r.Config.RegistryPath(), "registry"))
+}
+
+func registryRequest(r *Router, assets []interface{}) *httptest.ResponseRecorder {
+	request := map[string]interface{}{
+		"assets": assets,
+	}
+
+	payload, _ := json.Marshal(request)
+	req, _ := http.NewRequest("POST", "/registry", bytes.NewBuffer(payload))
+	return doRequest(r, req)
+}
+
+
+================================================
+File: /router/broadcast_handler_test.go
+================================================
+package router
+
+import (
+	"bytes"
+	"encoding/json"
+	"net/http"
+	"net/http/httptest"
+	"strconv"
+	"testing"
+	"time"
+
+	"github.com/vulpemventures/nigiri-chopsticks/helpers"
+)
+
+func TestBroadcastLiquidTransaction(t *testing.T) {
+	t.Skip()
+	r := NewTestRouter(withLiquid)
+	client := r.RPCClient
+
+	signedTx, err := getSignedTransaction(client)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	blockCountResp := blockCountRequest(r)
+	if blockCountResp.Code != http.StatusOK {
+		t.Fatalf("Expected status %d, got: %d\n", http.StatusOK, blockCountResp.Code)
+	}
+	prevBlockCount, _ := strconv.Atoi(blockCountResp.Body.String())
+
+	resp := broadcastRequest(r, signedTx)
+	if resp.Code != http.StatusOK {
+		t.Fatalf("Expected status: %d, got: %d with error: %s\n", http.StatusOK, resp.Code, resp.Body.String())
+	}
+
+	time.Sleep(5 * time.Second)
+
+	blockCountResp = blockCountRequest(r)
+	if blockCountResp.Code != http.StatusOK {
+		t.Fatalf("Expected status %d, got: %d\n", http.StatusOK, blockCountResp.Code)
+	}
+	blockCount, _ := strconv.Atoi(blockCountResp.Body.String())
+	blockMined := blockCount - prevBlockCount
+	if blockMined != 1 {
+		t.Fatalf("Expected 1 block mined, got %d\n", blockMined)
+	}
+}
+
+func broadcastRequest(r *Router, txHex string) *httptest.ResponseRecorder {
+	payload := []byte(txHex)
+	req, _ := http.NewRequest("POST", "/tx", bytes.NewBuffer(payload))
+
+	return doRequest(r, req)
+}
+
+func getSignedTransaction(r *helpers.RpcClient) (string, error) {
+	confidentialAddress, err := getNewAddress(r)
+	if err != nil {
+		return "", err
+	}
+	unconfidentialAddress, err := getUnconfidentialAddress(r, confidentialAddress)
+	if err != nil {
+		return "", err
+	}
+
+	rawTx, err := createRawTransaction(r, unconfidentialAddress, 1.0)
+	if err != nil {
+		return "", err
+	}
+
+	fundedTx, err := fundRawTransaction(r, rawTx)
+	if err != nil {
+		return "", err
+	}
+
+	blindedTx, err := blindRawTransaction(r, fundedTx)
+	if err != nil {
+		return "", err
+	}
+
+	signedTx, err := signRawTransaction(r, blindedTx)
+	if err != nil {
+		return "", err
+	}
+
+	return signedTx, nil
+}
+
+func getNewAddress(r *helpers.RpcClient) (string, error) {
+	_, resp, err := handleRPCRequest(r, "getnewaddress", nil)
+	if err != nil {
+		return "", err
+	}
+	return resp.(string), nil
+}
+
+func getUnconfidentialAddress(r *helpers.RpcClient, confidential string) (string, error) {
+	_, resp, err := handleRPCRequest(r, "validateaddress", []interface{}{confidential})
+	if err != nil {
+		return "", err
+	}
+	return resp.(map[string]interface{})["unconfidential"].(string), nil
+}
+
+func createRawTransaction(r *helpers.RpcClient, receiver string, amount float64) (string, error) {
+	inputs := []interface{}{}
+	outputs := map[string]float64{receiver: amount}
+	_, resp, err := handleRPCRequest(r, "createrawtransaction", []interface{}{inputs, outputs})
+	if err != nil {
+		return "", err
+	}
+	return resp.(string), nil
+}
+
+func fundRawTransaction(r *helpers.RpcClient, txHex string) (string, error) {
+	_, resp, err := handleRPCRequest(r, "fundrawtransaction", []interface{}{txHex})
+	if err != nil {
+		return "", err
+	}
+	return resp.(map[string]interface{})["hex"].(string), nil
+}
+
+func blindRawTransaction(r *helpers.RpcClient, txHex string) (string, error) {
+	_, resp, err := handleRPCRequest(r, "blindrawtransaction", []interface{}{txHex})
+	if err != nil {
+		return "", err
+	}
+	return resp.(string), nil
+}
+
+func signRawTransaction(r *helpers.RpcClient, txHex string) (string, error) {
+	_, resp, err := handleRPCRequest(r, "signrawtransactionwithwallet", []interface{}{txHex})
+	if err != nil {
+		return "", err
+	}
+	return resp.(map[string]interface{})["hex"].(string), nil
+}
+
+func handleRPCRequest(client *helpers.RpcClient, method string, params []interface{}) (int, interface{}, error) {
+	status, resp, err := client.Call(method, params)
+	if err != nil {
+		return status, "", err
+	}
+	var out interface{}
+	err = json.Unmarshal(resp.Result, &out)
+	if err != nil {
+		return http.StatusInternalServerError, "", err
+	}
+
+	return status, out, nil
+}
+
+
+================================================
+File: /router/main_test.go
+================================================
+package router
+
+import (
+	"testing"
+
+	"github.com/vulpemventures/nigiri-chopsticks/config"
+)
+
+func NewTestRouter(liquid bool) *Router {
+	if liquid {
+		return NewRouter(config.NewLiquidTestConfig())
+	}
+
+	return NewRouter(config.NewTestConfig())
+}
+
+func TestBitcoinChopsticks(t *testing.T) {
+	t.Skip()
+	r := NewTestRouter(false)
+	if r == nil {
+		t.Fatal("Expected *Router, got <nil>")
+	}
+}
+
+func TestLiquidChopsticks(t *testing.T) {
+	t.Skip()
+	r := NewTestRouter(true)
+	if r == nil {
+		t.Fatal("Expected *Router, got <nil>")
+	}
+}
+
+
+================================================
+File: /router/middleware/logger.go
+================================================
+package middleware
+
+import (
+	"net/http"
+	"strings"
+	"time"
+
+	log "github.com/sirupsen/logrus"
+)
+
+// Logger is a middleware that logs every request/response
+func Logger(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		start := time.Now()
+		res := newResponseWriter(w)
+
+		next.ServeHTTP(res, r)
+
+		log.WithFields(log.Fields{
+			"start_time": start.Format(time.RFC3339),
+			"duration":   time.Since(start),
+			"method":     r.Method,
+			"hostname":   r.Host,
+			"path":       r.URL.Path,
+			"status":     res.Status(),
+			"response":   prettyJSON(res.Body()),
+		}).Info("New request from remote address: ", r.RemoteAddr)
+	})
+}
+
+func prettyJSON(b []byte) string {
+	replacer := strings.NewReplacer("\"", "'", "\n", "")
+	return replacer.Replace(string(b))
+}
+
+
+================================================
+File: /router/middleware/response_writer.go
+================================================
+/*
+The MIT License (MIT)
+
+Copyright (c) 2014 Jeremy Saenz
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+*/
+
+package middleware
+
+import (
+	"net/http"
+)
+
+// ResponseWriter is a wrapper around http.ResponseWriter that provides extra information about response.
+type ResponseWriter interface {
+	http.ResponseWriter
+	http.Flusher
+
+	Status() int
+	Body() []byte
+	Written() bool
+	Before(func(ResponseWriter))
+}
+
+type beforeFunc func(ResponseWriter)
+
+func newResponseWriter(rw http.ResponseWriter) ResponseWriter {
+	nrw := &responseWriter{
+		ResponseWriter: rw,
+	}
+
+	if _, ok := rw.(http.CloseNotifier); ok {
+		return &responseWriterCloseNotifer{nrw}
+	}
+
+	return nrw
+}
+
+type responseWriter struct {
+	http.ResponseWriter
+	status      int
+	body        []byte
+	size        int
+	beforeFuncs []beforeFunc
+}
+
+func (rw *responseWriter) WriteHeader(s int) {
+	rw.status = s
+	rw.callBefore()
+	rw.ResponseWriter.WriteHeader(s)
+}
+
+func (rw *responseWriter) Write(b []byte) (int, error) {
+	if !rw.Written() {
+		// The status will be StatusOK if WriteHeader has not been called yet
+		rw.WriteHeader(http.StatusOK)
+	}
+	size, err := rw.ResponseWriter.Write(b)
+	rw.size += size
+	rw.body = b
+	return size, err
+}
+
+// Status returns the status code of the response or 0 if the response has not been written
+func (rw *responseWriter) Status() int {
+	return rw.status
+}
+
+// Body returns the response body
+func (rw *responseWriter) Body() []byte {
+	return rw.body
+}
+
+// Written returns whether or not the ResponseWriter has been written.
+func (rw *responseWriter) Written() bool {
+	return rw.status != 0
+}
+
+// Before allows for a function to be called before the ResponseWriter has been written to. This is
+// useful for setting headers or any other operations that must happen before a response has been written.
+func (rw *responseWriter) Before(before func(ResponseWriter)) {
+	rw.beforeFuncs = append(rw.beforeFuncs, before)
+}
+
+func (rw *responseWriter) callBefore() {
+	for i := len(rw.beforeFuncs) - 1; i >= 0; i-- {
+		rw.beforeFuncs[i](rw)
+	}
+}
+
+func (rw *responseWriter) Flush() {
+	flusher, ok := rw.ResponseWriter.(http.Flusher)
+	if ok {
+		if !rw.Written() {
+			// The status will be StatusOK if WriteHeader has not been called yet
+			rw.WriteHeader(http.StatusOK)
+		}
+		flusher.Flush()
+	}
+}
+
+type responseWriterCloseNotifer struct {
+	*responseWriter
+}
+
+func (rw *responseWriterCloseNotifer) CloseNotify() <-chan bool {
+	return rw.ResponseWriter.(http.CloseNotifier).CloseNotify()
+}
+
+
